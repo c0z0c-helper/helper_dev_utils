@@ -1,0 +1,84 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "helper-dev-utils"
+version = "0.5.0"
+description = "Python 유틸리티 모음 라이브러리: 로깅, Pandas 확장, 출력, 경로 관리"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "c0z0c", email = "c0z0c.dev@gmail.com"}
+]
+keywords = [
+    "utilities", "logger", "pandas", "print", "colab",
+    "jupyter", "path", "cache", "google-drive", "logging",
+    "visualization", "tree", "korean"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+
+dependencies = [
+    "matplotlib>=3.2.0",
+    "numpy>=1.16.0",
+    "pandas>=1.0.0",
+    "pytz>=2021.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+dotenv = [
+    "python-dotenv>=0.19.0",
+]
+jupyter = [
+    "IPython>=7.0.0",
+]
+torch = [
+    "torch>=1.0.0",
+]
+all = [
+    "python-dotenv>=0.19.0",
+    "IPython>=7.0.0",
+    "torch>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/c0z0c-helper/helper_dev_utils"
+Repository = "https://github.com/c0z0c-helper/helper_dev_utils"
+Issues = "https://github.com/c0z0c-helper/helper_dev_utils/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+helper_dev_utils = [".env.example_logger"]
+
+[tool.black]
+line-length = 100
+target-version = ["py38", "py39", "py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
