@@ -20,6 +20,7 @@ logger = helper_logger.get_auto_logger()
 
 try:
     from dotenv import load_dotenv, dotenv_values
+
     DOTENV_AVAILABLE = True
 except ImportError:
     DOTENV_AVAILABLE = False
@@ -27,19 +28,21 @@ except ImportError:
 try:
     import IPython
     from IPython.display import HTML
+
     IPYTHON_AVAILABLE = True
 except ImportError:
     IPYTHON_AVAILABLE = False
-    
+
 try:
     import google.colab
     from google.colab import drive
+
     IS_COLAB = True
 except ImportError:
     IS_COLAB = False
 
 
-def _find_cache_root(app_name: str = "sprint_mission") -> str:
+def _find_cache_root(app_name: str = ".cache") -> str:
     """
     캐시 디렉토리를 다음 우선순위로 찾습니다:
     1. .env 파일의 MY_CACHE_LOCAL (폴더 생성 시도 포함)
@@ -49,7 +52,7 @@ def _find_cache_root(app_name: str = "sprint_mission") -> str:
     Parameters
     ----------
     app_name : str
-        캐시 디렉토리 이름 (기본값: "sprint_mission")
+        캐시 디렉토리 이름 (기본값: ".cache")
 
     Returns
     -------
@@ -57,7 +60,7 @@ def _find_cache_root(app_name: str = "sprint_mission") -> str:
         발견되거나 생성된 캐시 경로, 또는 temp 폴더 경로.
     """
     logger = helper_logger.get_auto_logger()
-    
+
     # 1순위: .env 파일의 MY_CACHE_LOCAL
     if DOTENV_AVAILABLE:
         try:
@@ -76,16 +79,18 @@ def _find_cache_root(app_name: str = "sprint_mission") -> str:
                         logger.debug("Created MY_CACHE_LOCAL from .env: %s", my_cache_env)
                         return os.path.abspath(my_cache_env)
                     except (OSError, PermissionError) as e:
-                        logger.warning("Failed to create MY_CACHE_LOCAL from .env (%s): %s", my_cache_env, e)
+                        logger.warning(
+                            "Failed to create MY_CACHE_LOCAL from .env (%s): %s", my_cache_env, e
+                        )
         except Exception as e:
             logger.warning("Failed to load .env file: %s", e)
     else:
         logger.warning("python-dotenv not available, skipping .env file loading")
-    
+
     # 2순위: OS별 자동 탐색
     search_paths = []
     system = platform.system()
-    
+
     if system == "Windows":
         # Windows: %LOCALAPPDATA%
         localappdata = os.getenv("LOCALAPPDATA", os.path.expanduser("~\\AppData\\Local"))
@@ -93,7 +98,7 @@ def _find_cache_root(app_name: str = "sprint_mission") -> str:
         # 대안: APPDATA
         appdata = os.getenv("APPDATA", os.path.expanduser("~\\AppData\\Roaming"))
         search_paths.append(os.path.join(appdata, app_name, "Cache"))
-    
+
     elif system == "Linux":
         # Linux: XDG_CACHE_HOME 또는 ~/.cache
         xdg_cache = os.getenv("XDG_CACHE_HOME")
@@ -101,11 +106,11 @@ def _find_cache_root(app_name: str = "sprint_mission") -> str:
             search_paths.append(os.path.join(xdg_cache, app_name))
         else:
             search_paths.append(os.path.join(os.path.expanduser("~"), ".cache", app_name))
-    
+
     elif system == "Darwin":
         # macOS: ~/Library/Caches
         search_paths.append(os.path.join(os.path.expanduser("~"), "Library", "Caches", app_name))
-    
+
     # 탐색 및 첫 발견 즉시 반환
     for path in search_paths:
         try:
@@ -116,10 +121,10 @@ def _find_cache_root(app_name: str = "sprint_mission") -> str:
         except (OSError, PermissionError):
             # 접근 불가능한 경로는 건너뜀
             continue
-    
+
     # 3순위: temp 폴더
     temp_path = tempfile.gettempdir()
-    logger.warning("Cache directory not found, falling back to temp folder: %s", temp_path)
+    # logger.warning("Cache directory not found, falling back to temp folder: %s", temp_path)
     return temp_path
 
 
@@ -136,7 +141,7 @@ def _find_google_drive() -> str:
         발견되거나 생성된 GoogleDrive 경로, 또는 temp 폴더 경로.
     """
     logger = helper_logger.get_auto_logger()
-    
+
     # 1순위: .env 파일의 MY_DRIVER_LOCAL
     if DOTENV_AVAILABLE:
         try:
@@ -155,16 +160,18 @@ def _find_google_drive() -> str:
                         logger.debug("Created MY_DRIVER_LOCAL from .env: %s", my_driver_env)
                         return os.path.abspath(my_driver_env)
                     except (OSError, PermissionError) as e:
-                        logger.warning("Failed to create MY_DRIVER_LOCAL from .env (%s): %s", my_driver_env, e)
+                        logger.warning(
+                            "Failed to create MY_DRIVER_LOCAL from .env (%s): %s", my_driver_env, e
+                        )
         except Exception as e:
             logger.warning("Failed to load .env file: %s", e)
     else:
         logger.warning("python-dotenv not available, skipping .env file loading")
-    
+
     # 2순위: OS별 자동 탐색
     search_paths = []
     system = platform.system()
-    
+
     if system == "Windows":
         # Windows: 모든 드라이브 문자 확인
         for letter in string.ascii_uppercase:
@@ -173,27 +180,31 @@ def _find_google_drive() -> str:
         # 사용자 홈 디렉토리
         for folder_name in ["GoogleDrive", "Google Drive"]:
             search_paths.append(os.path.join(os.path.expanduser("~"), folder_name))
-    
+
     elif system == "Linux":
         # Linux: 홈, /mnt, /media 등
         username = os.getenv("USER", "")
         for folder_name in ["GoogleDrive", "Google Drive"]:
-            search_paths.extend([
-                os.path.join(os.path.expanduser("~"), folder_name),
-                os.path.join("/mnt", folder_name),
-                os.path.join("/media", username, folder_name) if username else None,
-                os.path.join("/opt", folder_name),
-            ])
+            search_paths.extend(
+                [
+                    os.path.join(os.path.expanduser("~"), folder_name),
+                    os.path.join("/mnt", folder_name),
+                    os.path.join("/media", username, folder_name) if username else None,
+                    os.path.join("/opt", folder_name),
+                ]
+            )
         search_paths = [p for p in search_paths if p is not None]
-    
+
     elif system == "Darwin":
         # macOS: 홈, /Volumes
         for folder_name in ["GoogleDrive", "Google Drive"]:
-            search_paths.extend([
-                os.path.join(os.path.expanduser("~"), folder_name),
-                os.path.join("/Volumes", folder_name),
-            ])
-    
+            search_paths.extend(
+                [
+                    os.path.join(os.path.expanduser("~"), folder_name),
+                    os.path.join("/Volumes", folder_name),
+                ]
+            )
+
     # 탐색 및 첫 발견 즉시 반환
     for path in search_paths:
         try:
@@ -205,15 +216,17 @@ def _find_google_drive() -> str:
         except (OSError, PermissionError):
             # 접근 불가능한 경로는 건너뜀
             continue
-    
+
     # 3순위: temp 폴더
     temp_path = tempfile.gettempdir()
-    logger.warning("GoogleDrive not found, falling back to temp folder: %s", temp_path)
+    # logger.warning("GoogleDrive not found, falling back to temp folder: %s", temp_path)
     return temp_path
 
 
 _my_driver_local = _find_google_drive()
 _my_driver_colab = r"/content/drive/MyDrive"
+
+
 def my_driver(my_driver_local: str | None = None, my_driver_colab: str | None = None) -> str:
     """
     로컬 또는 Colab 환경에 맞는 Google Drive 루트 경로를 반환합니다.
@@ -336,9 +349,7 @@ def my_driver_path(
         if isinstance(sp, (str, os.PathLike)):
             processed_subpaths.append(str(sp))
         else:
-            raise TypeError(
-                f"Subpath must be str or os.PathLike, got {type(sp).__name__}"
-            )
+            raise TypeError(f"Subpath must be str or os.PathLike, got {type(sp).__name__}")
 
     # 시작점 결정: 첫 subpath가 절대경로면 해당 경로, 아니면 base
     if processed_subpaths and os.path.isabs(processed_subpaths[0]):
@@ -358,7 +369,7 @@ def my_driver_path(
     # allow_escape=False일 때 경로 탈출 검사 (start_path 기준)
     if not allow_escape:
         is_relative = False
-        
+
         if hasattr(result_path, "is_relative_to"):
             is_relative = result_path.is_relative_to(start_path)
         else:
@@ -367,7 +378,7 @@ def my_driver_path(
                 is_relative = True
             except ValueError:
                 is_relative = False
-        
+
         if not is_relative:
             logger.error("Path escape detected: %s is not relative to %s", result_path, start_path)
             raise ValueError(
@@ -396,9 +407,11 @@ def my_driver_path(
     logger.debug("my_driver_path final: %s", result_path)
     return str(result_path)
 
+
 # 캐시 경로 초기화
 _my_cache_local = _find_cache_root()
-_my_cache_colab = r"/content/cache/sprint_mission"
+_my_cache_colab = r"/content/cache/.cache"
+
 
 def my_cache(my_cache_local: str | None = None, my_cache_colab: str | None = None) -> str:
     """
@@ -522,15 +535,13 @@ def my_cache_path(
         if isinstance(sp, (str, os.PathLike)):
             processed_subpaths.append(str(sp))
         else:
-            raise TypeError(
-                f"Subpath must be str or os.PathLike, got {type(sp).__name__}"
-            )
+            raise TypeError(f"Subpath must be str or os.PathLike, got {type(sp).__name__}")
 
     # 첫 subpath가 절대경로인 경우: base 무시하고 절대 경로만 정규화해 반환 (탈출 검사 스킵)
     if processed_subpaths and os.path.isabs(processed_subpaths[0]):
         result_path = Path(processed_subpaths[0]).resolve(strict=False)
         logger.info("First subpath is absolute, returning (escape check skipped): %s", result_path)
-        
+
         # create=True: 디렉토리 생성
         if create:
             try:
@@ -546,7 +557,7 @@ def my_cache_path(
                 logger.error("Validation failed: path does not exist: %s", result_path)
                 raise FileNotFoundError(f"Path does not exist: {result_path}")
             logger.debug("Path validation passed: %s", result_path)
-        
+
         return str(result_path)
 
     # 상대 경로: base와 결합
@@ -559,7 +570,7 @@ def my_cache_path(
     if not allow_escape:
         # 경로 탈출 여부 확인: result_path가 base의 하위디렉토리인지 확인
         is_relative = False
-        
+
         # Python 3.9+: is_relative_to() 사용 (False 반환, 예외 아님)
         if hasattr(result_path, "is_relative_to"):
             is_relative = result_path.is_relative_to(base)
@@ -570,7 +581,7 @@ def my_cache_path(
                 is_relative = True
             except ValueError:
                 is_relative = False
-        
+
         # 탈출 감지 시 오류 발생
         if not is_relative:
             logger.error("Path escape detected: %s is not relative to %s", result_path, base)
@@ -605,25 +616,25 @@ if __name__ == "__main__":
     logger.debug("=" * 60)
     logger.debug("GoogleDrive Path Detection Test")
     logger.debug("=" * 60)
-    
+
     # 현재 OS 확인
     current_os = platform.system()
     logger.debug(f"Current OS: {current_os}")
-    
+
     # 자동 탐지된 경로 출력
     logger.debug(f"Auto-detected _my_driver_local: {_my_driver_local}")
     logger.debug(f"Is Colab environment: {IS_COLAB}")
-    
+
     # my_driver() 함수 테스트
     logger.debug(f"my_driver() returns: {my_driver()}")
-    
+
     # 경로 존재 여부 확인
     if os.path.exists(_my_driver_local):
         logger.debug(f"✓ Path exists: {_my_driver_local}")
         logger.debug(f"  Is directory: {os.path.isdir(_my_driver_local)}")
     else:
         logger.debug(f"✗ Path does not exist: {_my_driver_local}")
-    
+
     # .env 파일 확인
     env_path = os.path.join(os.getcwd(), ".env")
     if os.path.exists(env_path):
@@ -636,35 +647,35 @@ if __name__ == "__main__":
             logger.debug("  (python-dotenv not available)")
     else:
         logger.debug(f"✗ .env file not found at: {env_path}")
-    
+
     logger.debug("=" * 60)
-    
+
     # 테스트: Cache 경로 탐지 및 출력
     logger.debug("=" * 60)
     logger.debug("Cache Path Detection Test")
     logger.debug("=" * 60)
-    
+
     # 자동 탐지된 캐시 경로 출력
     logger.debug(f"Auto-detected _my_cache_local: {_my_cache_local}")
     logger.debug(f"Auto-detected _my_cache_colab: {_my_cache_colab}")
-    
+
     # my_cache() 함수 테스트
     logger.debug(f"my_cache() returns: {my_cache()}")
-    
+
     # 캐시 경로 존재 여부 확인
     if os.path.exists(_my_cache_local):
         logger.debug(f"✓ Cache path exists: {_my_cache_local}")
         logger.debug(f"  Is directory: {os.path.isdir(_my_cache_local)}")
     else:
         logger.debug(f"✗ Cache path does not exist: {_my_cache_local}")
-    
+
     # my_cache_path() 함수 테스트
     try:
         test_cache_path = my_cache_path("test_subdir", validate=False)
         logger.debug(f"✓ my_cache_path('test_subdir'): {test_cache_path}")
     except Exception as e:
         logger.debug(f"✗ my_cache_path() error: {e}")
-    
+
     # .env 파일의 MY_CACHE_LOCAL 확인
     if DOTENV_AVAILABLE:
         load_dotenv(env_path)
@@ -673,7 +684,5 @@ if __name__ == "__main__":
             logger.debug(f"✓ MY_CACHE_LOCAL from .env: {my_cache_env}")
         else:
             logger.debug("  MY_CACHE_LOCAL not set in .env")
-    
+
     logger.debug("=" * 60)
-
-

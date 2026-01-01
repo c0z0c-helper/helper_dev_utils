@@ -15,7 +15,7 @@ Python 유틸리티 모음 라이브러리
     from helper_dev_utils import get_auto_logger
     logger = get_auto_logger()
     logger.info("Hello World")
-    
+
     # Pandas Extension
     from helper_dev_utils import set_pandas_extension
     import pandas as pd
@@ -23,19 +23,19 @@ Python 유틸리티 모음 라이브러리
     df = pd.DataFrame({'name': ['Alice', 'Bob']})
     df.set_col_description('name', '사용자 이름')
     df.show()
-    
+
     # Print Tree
     from helper_dev_utils import print_dir_tree, print_json_tree
     print_dir_tree('/path/to/directory')
     print_json_tree({'key': 'value'})
-    
+
     # Colab Path
     from helper_dev_utils import my_driver, my_cache
     driver_path = my_driver()  # Google Drive 경로
     cache_path = my_cache()    # 캐시 경로
 """
 
-__version__ = "0.5.0"
+__version__ = "0.5.2"
 
 # Import main functions from each module
 from .helper_logger import (
@@ -66,21 +66,17 @@ __all__ = [
     "get_logger",
     "get_auto_logger",
     "sample_logger_env",
-    
     # Pandas extension
     "set_pandas_extension",
-    
     # Print utilities
     "print_dir_tree",
     "print_json_tree",
     "print_dic_tree",
-    
     # Colab/Path utilities
     "my_driver",
     "my_driver_path",
     "my_cache",
     "my_cache_path",
-    
     # Version
     "__version__",
 ]
