@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "helper-dev-utils"
-version = "0.5.2"
+version = "0.5.3"
 description = "Python 유틸리티 모음 라이브러리: 로깅, Pandas 확장, 출력, 경로 관리"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -36,7 +36,7 @@ dependencies = [
     "matplotlib>=3.2.0",
     "numpy>=1.16.0",
     "pandas>=1.0.0",
-    "pytz>=2021.1",
+    "pytz>=2021.1; python_version < '3.9'",
 ]
 
 [project.optional-dependencies]

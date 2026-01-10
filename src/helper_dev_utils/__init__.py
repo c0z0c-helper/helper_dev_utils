@@ -35,13 +35,14 @@ Python 유틸리티 모음 라이브러리
     cache_path = my_cache()    # 캐시 경로
 """
 
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 
 # Import main functions from each module
 from .helper_logger import (
     get_logger,
     get_auto_logger,
     sample_logger_env,
+    reconfigure_logger,
 )
 
 from .helper_pandas import (
@@ -66,6 +67,7 @@ __all__ = [
     "get_logger",
     "get_auto_logger",
     "sample_logger_env",
+    "reconfigure_logger",
     # Pandas extension
     "set_pandas_extension",
     # Print utilities

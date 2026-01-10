@@ -61,11 +61,23 @@ logger.error("에러 메시지")
 **환경변수 설정 예시 (`.env` 파일)**:
 ```env
 LOG_LEVEL=INFO
-LOG_CONSOLE=True
-LOG_FILE=True
-LOG_FILE_PATH=./logs/app.log
-LOG_FILE_MAX_BYTES=10485760
-LOG_FILE_BACKUP_COUNT=5
+LOG_CONSOLE_LEVEL=WARNING
+LOG_FILE_LEVEL=DEBUG
+LOG_DIR=./logs
+LOG_FILE_ENABLED=true
+```
+
+**로거 재구성**:
+```python
+# 방법 1: logger.set() 메서드 (권장)
+logger = get_auto_logger(console_level=logging.INFO)
+logger.info("초기 설정")
+logger.set(console_level=logging.DEBUG, file=True)
+logger.debug("재구성 후 DEBUG 출력")
+
+# 방법 2: reconfigure_logger() 함수
+from helper_dev_utils import reconfigure_logger
+logger = reconfigure_logger("app", console_level=logging.WARNING, file=True)
 ```
 
 ### 2. Pandas Extension (helper_pandas)
@@ -180,5 +192,6 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
 ## 관련 라이브러리
 
-- [helper-plot-hangul](https://github.com/c0z0c-helper/helper_plot_hangul) - Matplotlib 한글 폰트 자동 설정
-- [helper-hwp](https://github.com/c0z0c-helper/helper_hwp) - HWP 파일 파싱 라이브러리
+- [helper-plot-hangul](https://pypi.org/project/helper-plot-hangul) - Matplotlib 한글 폰트 자동 설정
+- [helper-md-doc](https://pypi.org/project/helper-md-doc) - md doc 파일 라이브러리
+- [helper-hwp](https://pypi.org/project/helper-hwp) - HWP 파일 파싱 라이브러리
