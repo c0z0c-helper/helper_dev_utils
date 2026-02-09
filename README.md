@@ -98,21 +98,44 @@ df = pd.DataFrame({
     'city': ['Seoul', 'Busan', 'Incheon']
 })
 
-# 컬럼 설명 추가
-df.set_col_description('name', '사용자 이름')
-df.set_col_description('age', '나이')
-df.set_col_description('city', '거주 도시')
+# 컬럼 설명 추가 (개별)
+df.set_head_att('name', '사용자 이름')
+df.set_head_att('age', '나이')
+df.set_head_att('city', '거주 도시')
+
+# 컬럼 설명 추가 (딕셔너리)
+df.set_head_att({
+    'name': '사용자 이름',
+    'age': '나이',
+    'city': '거주 도시'
+})
 
 # 한글 컬럼명과 함께 출력
-df.show()
+df.head_att()
 # 출력:
-# name (사용자 이름)  age (나이)  city (거주 도시)
-# Alice               25          Seoul
-# Bob                 30          Busan
-# Charlie             35          Incheon
+# 사용자 이름    나이  거주 도시
+# name          age   city
+# Alice          25   Seoul
+# Bob            30   Busan
+# Charlie        35   Incheon
+
+# 또는 head() 메서드 오버라이드 사용 (enable_head_override=True일 때)
+df.head()
+
+# 다양한 출력 형식
+df.head_att(rows=10)              # 10행 출력
+df.head_att(rows='all')           # 전체 출력
+df.head_att(out='html')           # HTML 형태로 출력
+df.head_att(out='str')            # 문자열로 반환
 
 # 컬럼 설명 조회
-print(df.get_col_description('name'))  # 출력: 사용자 이름
+print(df.get_head_att('name'))    # 출력: 사용자 이름
+print(df.get_head_att())          # 전체 딕셔너리 출력
+
+# 컬럼 설명 삭제
+df.remove_head_att('age')         # 단일 삭제
+df.remove_head_att(['name', 'city'])  # 여러 개 삭제
+df.clear_head_att()               # 전체 초기화
 ```
 
 ### 3. Print Utilities (helper_utils_print)
@@ -168,15 +191,66 @@ MY_CACHE_PATH=/custom/cache/path
 ## 의존성
 
 ### 필수 의존성
+
 - `matplotlib >= 3.2.0`
 - `numpy >= 1.16.0`
 - `pandas >= 1.0.0`
 - `pytz >= 2021.1`
 
 ### 선택적 의존성
+
 - `python-dotenv >= 0.19.0` - `.env` 파일 지원
 - `IPython >= 7.0.0` - Jupyter/Colab 지원
 - `torch >= 1.0.0` - PyTorch Tensor 지원
+
+## 개발 및 테스트
+
+### 개발 환경 설정
+
+```bash
+# 저장소 클론
+git clone https://github.com/c0z0c-helper/helper_dev_utils.git
+cd helper_dev_utils
+
+# 개발 의존성 설치
+pip install -r requirements-dev.txt
+
+# 편집 가능 모드로 설치
+pip install -e .
+```
+
+### 테스트 실행
+
+```bash
+# 전체 테스트 실행
+pytest tests -v
+
+# 특정 테스트 파일 실행
+pytest tests/test_helper_logger.py -v
+pytest tests/test_helper_utils_colab.py -v
+
+# 커버리지 포함 실행
+pytest tests --cov=helper_dev_utils --cov-report=html
+```
+
+### 테스트 환경 설정
+
+테스트에서 `helper_utils_colab` 함수를 검증하려면 `.env.test` 파일을 사용합니다:
+
+1. `.env.test` 파일을 프로젝트 루트에 생성 (이미 샘플이 제공됨)
+2. 테스트용 캐시 및 드라이버 경로 설정:
+
+```env
+# Windows
+MY_CACHE_LOCAL=C:/Users/YOUR_USERNAME/AppData/Local/Temp/helper_dev_utils_test_cache
+MY_DRIVER_PATH=C:/Users/YOUR_USERNAME/AppData/Local/Temp/helper_dev_utils_test_driver
+
+# Linux/macOS
+# MY_CACHE_LOCAL=/tmp/helper_dev_utils_test_cache
+# MY_DRIVER_PATH=/tmp/helper_dev_utils_test_driver
+```
+
+`conftest.py`가 자동으로 `.env.test`를 로드하여 테스트 실행 전 환경을 설정합니다.
 
 ## 라이선스
 

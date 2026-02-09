@@ -35,7 +35,7 @@ Python 유틸리티 모음 라이브러리
     cache_path = my_cache()    # 캐시 경로
 """
 
-__version__ = "0.5.3"
+__version__ = "0.5.4"
 
 # Import main functions from each module
 from .helper_logger import (

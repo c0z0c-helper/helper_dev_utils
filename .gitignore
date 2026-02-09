@@ -48,6 +48,7 @@ coverage.xml
 # Environments
 .pypirc
 .env
+.env.backup
 .venv
 env/
 venv/

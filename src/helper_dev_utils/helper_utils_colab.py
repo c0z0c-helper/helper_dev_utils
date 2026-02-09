@@ -66,7 +66,7 @@ def _find_cache_root(app_name: str = ".cache") -> str:
         try:
             env_path = os.path.join(os.getcwd(), ".env")
             if os.path.exists(env_path):
-                load_dotenv(env_path)
+                load_dotenv(env_path, override=True)
                 my_cache_env = os.getenv("MY_CACHE_LOCAL")
                 if my_cache_env:
                     # 경로 존재 확인
@@ -147,7 +147,7 @@ def _find_google_drive() -> str:
         try:
             env_path = os.path.join(os.getcwd(), ".env")
             if os.path.exists(env_path):
-                load_dotenv(env_path)
+                load_dotenv(env_path, override=True)
                 my_driver_env = os.getenv("MY_DRIVER_LOCAL")
                 if my_driver_env:
                     # 경로 존재 확인
@@ -640,7 +640,7 @@ if __name__ == "__main__":
     if os.path.exists(env_path):
         logger.debug(f"✓ .env file found at: {env_path}")
         if DOTENV_AVAILABLE:
-            load_dotenv(env_path)
+            load_dotenv(env_path, override=True)
             my_driver_env = os.getenv("MY_DRIVER_LOCAL")
             logger.debug(f"MY_DRIVER_LOCAL from .env: {my_driver_env}")
         else:
@@ -678,7 +678,7 @@ if __name__ == "__main__":
 
     # .env 파일의 MY_CACHE_LOCAL 확인
     if DOTENV_AVAILABLE:
-        load_dotenv(env_path)
+        load_dotenv(env_path, override=True)
         my_cache_env = os.getenv("MY_CACHE_LOCAL")
         if my_cache_env:
             logger.debug(f"✓ MY_CACHE_LOCAL from .env: {my_cache_env}")
