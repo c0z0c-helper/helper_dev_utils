@@ -27,6 +27,7 @@ from helper_dev_utils.helper_logger import (
     _clear_handlers,
     _load_env_config,
     _loggers,
+    _clear_file_handler_cache,
 )
 
 
@@ -40,10 +41,31 @@ def temp_dir():
 
 @pytest.fixture(autouse=True)
 def clear_logger_cache():
-    """각 테스트 후 로거 캐시 초기화"""
-    yield
+    """각 테스트 전후 로거 캐시 초기화"""
+    # 테스트 실행 전 초기화
+    for logger_name in list(logging.Logger.manager.loggerDict.keys()):
+        logger = logging.getLogger(logger_name)
+        if hasattr(logger, "handlers"):
+            for handler in list(logger.handlers):
+                handler.close()
+                logger.removeHandler(handler)
+
     _loggers.clear()
-    # logging 모듈의 로거 매니저도 초기화
+    _clear_file_handler_cache()
+    logging.Logger.manager.loggerDict.clear()
+
+    yield
+
+    # 테스트 실행 후 초기화
+    for logger_name in list(logging.Logger.manager.loggerDict.keys()):
+        logger = logging.getLogger(logger_name)
+        if hasattr(logger, "handlers"):
+            for handler in list(logger.handlers):
+                handler.close()
+                logger.removeHandler(handler)
+
+    _loggers.clear()
+    _clear_file_handler_cache()
     logging.Logger.manager.loggerDict.clear()
 
 
@@ -180,7 +202,7 @@ class TestGetLogger:
 
     def test_basic_logger_creation(self):
         """기본 로거 생성 테스트"""
-        logger = get_logger("test_basic")
+        logger = get_logger("test_basic", file=False)
 
         assert logger is not None
         assert logger.name == "test_basic"

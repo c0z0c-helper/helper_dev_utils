@@ -47,6 +47,7 @@ except ImportError:
 
 # 전역 변수
 _loggers: Dict[str, logging.Logger] = {}
+_file_handlers: Dict[Path, logging.Handler] = {}  # 파일 경로별 핸들러 캐시
 _process_start_time: str = ""  # 프로세스 시작 시점 타임스탬프 (lazy initialization)
 
 try:
@@ -168,7 +169,19 @@ def _clear_handlers(logger: logging.Logger) -> None:
     """
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
-        handler.close()
+        # 파일 핸들러 캐시에 있는 경우 close하지 않음 (다른 로거가 사용 중일 수 있음)
+        handler_file_path = None
+        if isinstance(
+            handler, (logging.handlers.RotatingFileHandler, TimestampRotatingFileHandler)
+        ):
+            handler_file_path = Path(handler.baseFilename)
+
+        if handler_file_path and handler_file_path in _file_handlers:
+            # 캐시된 핸들러는 close하지 않음
+            pass
+        else:
+            # 캐시되지 않은 핸들러만 close
+            handler.close()
 
 
 def _load_env_config(
@@ -435,19 +448,27 @@ def get_logger(
 
         log_file = final_log_dir / log_filename
 
-        # 파일 크기 제한 (MB → bytes)
-        max_bytes = final_max_log_file_size * 1024 * 1024 if final_max_log_file_size > 0 else 0
+        # 파일 핸들러 캐싱: 동일 경로의 핸들러가 이미 존재하면 재사용
+        if log_file in _file_handlers:
+            file_handler = _file_handlers[log_file]
+            logger.addHandler(file_handler)
+        else:
+            # 파일 크기 제한 (MB → bytes)
+            max_bytes = final_max_log_file_size * 1024 * 1024 if final_max_log_file_size > 0 else 0
 
-        # 타임스탬프 로테이션 핸들러 사용
-        file_handler = TimestampRotatingFileHandler(
-            filename=log_file,
-            log_file_basename=final_log_file_basename,
-            maxBytes=max_bytes,
-            encoding="utf-8",
-        )
-        file_handler.setLevel(final_file_level)
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+            # 타임스탬프 로테이션 핸들러 사용
+            file_handler = TimestampRotatingFileHandler(
+                filename=log_file,
+                log_file_basename=final_log_file_basename,
+                maxBytes=max_bytes,
+                encoding="utf-8",
+            )
+            file_handler.setLevel(final_file_level)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+
+            # 파일 핸들러 캐시에 저장
+            _file_handlers[log_file] = file_handler
 
     # .set() 메서드 바인딩 (monkey-patch)
     logger.set = types.MethodType(_set_method, logger)
@@ -462,6 +483,10 @@ def reconfigure_logger(name: str, **kwargs) -> logging.Logger:
 
     기존 핸들러를 모두 제거한 후 새로운 설정으로 로거를 재생성합니다.
     캐시에서 제거 후 get_logger를 재호출하므로 환경변수 및 매개변수 우선순위가 동일하게 적용됩니다.
+
+    주의:
+        - 파일 핸들러 캐시는 유지됩니다 (다른 로거가 사용 중일 수 있음)
+        - 파일 핸들러 캐시를 완전히 초기화하려면 _clear_file_handler_cache()를 호출하세요
 
     Args:
         name: 로거 이름
@@ -480,6 +505,26 @@ def reconfigure_logger(name: str, **kwargs) -> logging.Logger:
     if name in _loggers:
         del _loggers[name]
     return get_logger(name, **kwargs)
+
+
+def _clear_file_handler_cache() -> None:
+    """
+    파일 핸들러 캐시를 완전히 초기화
+
+    모든 캐시된 파일 핸들러를 close하고 캐시를 비웁니다.
+    테스트 환경이나 완전한 로거 재초기화가 필요한 경우 사용합니다.
+
+    Examples:
+        >>> _clear_file_handler_cache()
+        >>> # 새로운 파일 핸들러가 생성됩니다
+    """
+    global _file_handlers
+    for handler in _file_handlers.values():
+        try:
+            handler.close()
+        except Exception:
+            pass
+    _file_handlers.clear()
 
 
 def _set_method(self, **kwargs):
@@ -692,9 +737,8 @@ MAX_LOG_FILE_SIZE=10
     return output_file
 
 
-# 로그 중복출력 이슈 발상
 # 모듈 레벨 기본 로거
-# logger = get_auto_logger()
+logger = get_auto_logger()
 
 if __name__ == "__main__":
     """로거 기능 테스트"""
@@ -752,6 +796,35 @@ if __name__ == "__main__":
     print("\n[테스트 5] sample_logger_env() - 샘플 파일 생성")
     env_file = sample_logger_env()
     print(f"✓ 생성 성공: {env_file}")
+
+    # 테스트 6: 파일 핸들러 캐싱 검증
+    print("\n[테스트 6] 파일 핸들러 캐싱 검증 (중복 출력 방지)")
+    print(f"초기 파일 핸들러 캐시 크기: {len(_file_handlers)}")
+    
+    # 동일한 중앙 집중 파일을 사용하는 여러 로거 생성
+    cache_logger1 = get_logger(
+        "cache_test1", file=True, use_central_file=True, log_file_basename="cache_test"
+    )
+    print(f"cache_test1 생성 후 캐시 크기: {len(_file_handlers)}")
+    print(f"cache_test1 핸들러 개수: {len(cache_logger1.handlers)}")
+    
+    cache_logger2 = get_logger(
+        "cache_test2", file=True, use_central_file=True, log_file_basename="cache_test"
+    )
+    print(f"cache_test2 생성 후 캐시 크기: {len(_file_handlers)}")
+    print(f"cache_test2 핸들러 개수: {len(cache_logger2.handlers)}")
+    
+    # 동일한 파일 핸들러 객체를 공유하는지 확인
+    cache_logger1_file_handler = [h for h in cache_logger1.handlers if isinstance(h, TimestampRotatingFileHandler)]
+    cache_logger2_file_handler = [h for h in cache_logger2.handlers if isinstance(h, TimestampRotatingFileHandler)]
+    
+    if cache_logger1_file_handler and cache_logger2_file_handler:
+        same_handler = cache_logger1_file_handler[0] is cache_logger2_file_handler[0]
+        print(f"동일한 핸들러 객체 공유: {same_handler}")
+    
+    cache_logger1.info("cache_test1 로그")
+    cache_logger2.info("cache_test2 로그")
+    print("→ logs/cache_test.log 파일을 확인하여 각 로그가 1회만 출력되는지 확인")
 
     print("\n" + "=" * 60)
     print("테스트 완료")
