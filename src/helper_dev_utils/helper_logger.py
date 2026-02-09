@@ -692,9 +692,9 @@ MAX_LOG_FILE_SIZE=10
     return output_file
 
 
+# 로그 중복출력 이슈 발상
 # 모듈 레벨 기본 로거
-logger = get_auto_logger()
-
+# logger = get_auto_logger()
 
 if __name__ == "__main__":
     """로거 기능 테스트"""
