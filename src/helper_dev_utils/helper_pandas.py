@@ -42,8 +42,6 @@ except ImportError:
     import helper_pandas_core as core
     import helper_pandas_display as display
 
-logger = helper_logger.get_auto_logger()
-
 try:
     from dotenv import dotenv_values, load_dotenv
 
@@ -74,16 +72,6 @@ try:
 except ImportError:
     TORCH_AVAILABLE = False
     torch = None
-
-_print = logger.info  # logger의 info 메서드로 대체
-
-# 하위 호환성을 위한 core 모듈 함수 재수출
-_get_text_width = core.get_text_width
-_format_value = core.format_value
-_align_text = core.align_text
-_calculate_column_widths = core.calculate_column_widths
-
-_print = logger.info  # logger의 info 메서드로 대체
 
 # 하위 호환성을 위한 core 모듈 함수 재수출
 _get_text_width = core.get_text_width
@@ -157,6 +145,9 @@ def main() -> None:
     - remove_head_att: 컬럼 설명 삭제
     - clear_head_att: 모든 컬럼 설명 초기화
     """
+    logger = helper_logger.get_auto_logger()
+    _print = logger.info  # logger의 info 메서드로 대체
+
     _print("=" * 80)
     _print("pandas head_att 기능 테스트")
     _print("=" * 80)

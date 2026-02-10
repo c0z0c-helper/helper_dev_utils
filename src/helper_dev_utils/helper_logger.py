@@ -737,9 +737,6 @@ MAX_LOG_FILE_SIZE=10
     return output_file
 
 
-# 모듈 레벨 기본 로거
-logger = get_auto_logger()
-
 if __name__ == "__main__":
     """로거 기능 테스트"""
     print("=" * 60)
@@ -800,28 +797,32 @@ if __name__ == "__main__":
     # 테스트 6: 파일 핸들러 캐싱 검증
     print("\n[테스트 6] 파일 핸들러 캐싱 검증 (중복 출력 방지)")
     print(f"초기 파일 핸들러 캐시 크기: {len(_file_handlers)}")
-    
+
     # 동일한 중앙 집중 파일을 사용하는 여러 로거 생성
     cache_logger1 = get_logger(
         "cache_test1", file=True, use_central_file=True, log_file_basename="cache_test"
     )
     print(f"cache_test1 생성 후 캐시 크기: {len(_file_handlers)}")
     print(f"cache_test1 핸들러 개수: {len(cache_logger1.handlers)}")
-    
+
     cache_logger2 = get_logger(
         "cache_test2", file=True, use_central_file=True, log_file_basename="cache_test"
     )
     print(f"cache_test2 생성 후 캐시 크기: {len(_file_handlers)}")
     print(f"cache_test2 핸들러 개수: {len(cache_logger2.handlers)}")
-    
+
     # 동일한 파일 핸들러 객체를 공유하는지 확인
-    cache_logger1_file_handler = [h for h in cache_logger1.handlers if isinstance(h, TimestampRotatingFileHandler)]
-    cache_logger2_file_handler = [h for h in cache_logger2.handlers if isinstance(h, TimestampRotatingFileHandler)]
-    
+    cache_logger1_file_handler = [
+        h for h in cache_logger1.handlers if isinstance(h, TimestampRotatingFileHandler)
+    ]
+    cache_logger2_file_handler = [
+        h for h in cache_logger2.handlers if isinstance(h, TimestampRotatingFileHandler)
+    ]
+
     if cache_logger1_file_handler and cache_logger2_file_handler:
         same_handler = cache_logger1_file_handler[0] is cache_logger2_file_handler[0]
         print(f"동일한 핸들러 객체 공유: {same_handler}")
-    
+
     cache_logger1.info("cache_test1 로그")
     cache_logger2.info("cache_test2 로그")
     print("→ logs/cache_test.log 파일을 확인하여 각 로그가 1회만 출력되는지 확인")

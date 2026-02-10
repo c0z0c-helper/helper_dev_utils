@@ -16,8 +16,6 @@ try:
 except ImportError:
     import helper_logger
 
-logger = helper_logger.get_auto_logger()
-
 try:
     from dotenv import load_dotenv, dotenv_values
 
@@ -256,6 +254,7 @@ def my_driver(my_driver_local: str | None = None, my_driver_colab: str | None = 
     str
         현재 실행 환경에 맞는 드라이브 루트 경로 (Colab이면 colab 경로, 아니면 로컬 탐지 결과).
     """
+    logger = helper_logger.get_auto_logger()
     global _my_driver_local, _my_driver_colab
 
     # 전달된 인자로 전역 기본값 업데이트(명시적 우선권)
@@ -336,6 +335,7 @@ def my_driver_path(
     >>> my_driver_path('..', allow_escape=False)  # ValueError 발생 (기본 동작)
     ValueError: ...
     """
+    logger = helper_logger.get_auto_logger()
     # 호출 시 전달된 인자로 my_driver 동작 재정의 (테스트/오버라이드 용)
     base_path = my_driver(my_driver_local=my_driver_local, my_driver_colab=my_driver_colab)
     base = Path(base_path).resolve(strict=False)
@@ -442,6 +442,7 @@ def my_cache(my_cache_local: str | None = None, my_cache_colab: str | None = Non
     str
         현재 실행 환경에 맞는 캐시 루트 경로 (Colab이면 colab 경로, 아니면 로컬 탐지 결과).
     """
+    logger = helper_logger.get_auto_logger()
     global _my_cache_local, _my_cache_colab
 
     # 전달된 인자로 전역 기본값 업데이트(명시적 우선권)
@@ -522,6 +523,7 @@ def my_cache_path(
     >>> my_cache_path('..', allow_escape=False)  # ValueError 발생 (기본 동작)
     ValueError: ...
     """
+    logger = helper_logger.get_auto_logger()
     # 호출 시 전달된 인자로 my_cache 동작 재정의 (테스트/오버라이드 용)
     base_path = my_cache(my_cache_local=my_cache_local, my_cache_colab=my_cache_colab)
     base = Path(base_path).resolve(strict=False)
@@ -612,6 +614,7 @@ def my_cache_path(
 
 
 if __name__ == "__main__":
+    logger = helper_logger.get_auto_logger()
     # 테스트: GoogleDrive 경로 탐지 및 출력
     logger.debug("=" * 60)
     logger.debug("GoogleDrive Path Detection Test")
