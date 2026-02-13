@@ -35,7 +35,7 @@ Python 유틸리티 모음 라이브러리
     cache_path = my_cache()    # 캐시 경로
 """
 
-__version__ = "0.5.7"
+__version__ = "0.5.8"
 
 # Import main functions from each module
 from .helper_logger import (
@@ -56,10 +56,19 @@ from .helper_utils_print import (
 )
 
 from .helper_utils_colab import (
-    my_driver,
-    my_driver_path,
-    my_cache,
-    my_cache_path,
+    google_driver,
+    google_driver_path,
+    cache,
+    cache_path,
+    IS_COLAB,
+    IPYTHON_AVAILABLE,
+    DOTENV_AVAILABLE,
+)
+
+from .helper_colab_auth import (
+    google_authenticate,
+    google_get_secret,
+    google_is_drive_mounted,
 )
 
 __all__ = [
@@ -75,10 +84,18 @@ __all__ = [
     "print_json_tree",
     "print_dic_tree",
     # Colab/Path utilities
-    "my_driver",
-    "my_driver_path",
-    "my_cache",
-    "my_cache_path",
+    "google_driver",
+    "google_driver_path",
+    "cache",
+    "cache_path",
+    # Environment detection
+    "IS_COLAB",
+    "IPYTHON_AVAILABLE",
+    "DOTENV_AVAILABLE",
+    # Colab authentication
+    "google_authenticate",
+    "google_get_secret",
+    "google_is_drive_mounted",
     # Version
     "__version__",
 ]
