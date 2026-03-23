@@ -12,6 +12,7 @@ Python 개발 시 자주 사용하는 유틸리티 모음 라이브러리
 - **helper_pandas**: Pandas 확장 기능 (한글 컬럼 설명, 데이터 출력, HTML/콘솔 지원)
 - **helper_utils_print**: 출력 유틸리티 (디렉토리/JSON/딕셔너리 트리 구조 출력)
 - **helper_utils_colab**: 경로 관리 유틸리티 (로컬/Colab 환경 경로 자동 탐색)
+- **helper_help**: 도움말 유틸리티 (함수/메서드 시그니처·docstring 출력, 모듈 함수 검색)
 
 ## 설치
 
@@ -188,6 +189,44 @@ MY_DRIVER_PATH=/custom/drive/path
 MY_CACHE_PATH=/custom/cache/path
 ```
 
+### 5. Help Utilities (helper_help)
+
+함수·메서드의 시그니처와 docstring을 출력하고, 모듈에서 이름으로 함수를 검색합니다.
+
+```python
+from helper_dev_utils import helper_help, helper_search
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# 함수 도움말 출력 (시그니처 + docstring)
+helper_help(pd.DataFrame.groupby)
+helper_help(plt.plot)
+
+# 출력 예시:
+# Signature : DataFrame.groupby(self, by=None, ...)
+# Docstring :
+# Group DataFrame using a mapper or by a Series of columns.
+# ...
+```
+
+```python
+# 모듈에서 이름에 query가 포함된 함수 검색
+helper_search(pd, "merge")
+# 출력:
+# [pandas] 'merge' 검색 결과 (3건)
+#   - merge
+#   - merge_asof
+#   - merge_ordered
+
+# query=None 이면 전체 목록 출력
+helper_search(pd)
+```
+
+| 함수 | 설명 |
+|------|------|
+| `helper_help(fdn)` | 함수/메서드의 시그니처와 docstring 출력 |
+| `helper_search(lbn, query=None)` | 모듈 내 함수/클래스 중 이름에 query가 포함된 항목 출력. query 생략 시 전체 목록 |
+
 ## 의존성
 
 ### 필수 의존성
@@ -269,3 +308,24 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 - [helper-plot-hangul](https://pypi.org/project/helper-plot-hangul) - Matplotlib 한글 폰트 자동 설정
 - [helper-md-doc](https://pypi.org/project/helper-md-doc) - md doc 파일 라이브러리
 - [helper-hwp](https://pypi.org/project/helper-hwp) - HWP 파일 파싱 라이브러리
+
+---
+
+## 버전 히스토리
+
+### 0.5.7 이하
+
+- `helper_logger`: 로깅 유틸리티 초기 구현 및 환경변수 기반 설정 지원
+- `helper_pandas`: Pandas 확장 기능 (한글 컬럼 설명, `head_att`, `show` 등)
+- `helper_utils_print`: `print_dir_tree`, `print_json_tree`, `print_dic_tree` 구현
+- `helper_utils_colab`: 로컬/Colab 환경 경로 자동 탐색 구현
+
+### 0.5.8
+
+- `helper_cache`: 캐시 유틸리티 모듈 추가
+- `helper_colab_auth`: Google 인증 관련 함수 추가 (`google_authenticate`, `google_get_secret`, `google_is_drive_mounted`)
+
+### 0.5.9
+
+- `helper_help`: 함수/메서드 시그니처 및 docstring 출력 기능 추가
+- `helper_search`: 모듈 내 함수·클래스 이름 기반 검색 기능 추가

@@ -35,7 +35,7 @@ Python 유틸리티 모음 라이브러리
     cache_path = my_cache()    # 캐시 경로
 """
 
-__version__ = "0.5.8"
+__version__ = "0.5.9"
 
 # Import main functions from each module
 from .helper_logger import (
@@ -71,6 +71,11 @@ from .helper_colab_auth import (
     google_is_drive_mounted,
 )
 
+from .helper_help import (
+    helper_help,
+    helper_search,
+)
+
 __all__ = [
     # Logger utilities
     "get_logger",
@@ -96,6 +101,9 @@ __all__ = [
     "google_authenticate",
     "google_get_secret",
     "google_is_drive_mounted",
+    # Help utilities
+    "helper_help",
+    "helper_search",
     # Version
     "__version__",
 ]
