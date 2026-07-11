@@ -9,14 +9,72 @@ pytest 전역 설정 및 fixture
 import os
 import sys
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 import pytest
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo  # type: ignore
 
 
 # 프로젝트 루트 및 src 경로 추가
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
+
+_test_reports: list = []
+
+
+def pytest_runtest_logreport(report: pytest.TestReport):
+    """각 테스트의 최종 결과(setup 실패/스킵 또는 call)만 수집한다."""
+    if report.when == "call" or (report.when == "setup" and report.outcome != "passed"):
+        _test_reports.append(report)
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int):
+    """세션 종료 시 tests/report/년월일_시분초.md 로 결과 테이블을 기록한다."""
+    if not _test_reports:
+        return
+
+    report_dir = Path(__file__).parent / "report"
+    report_dir.mkdir(parents=True, exist_ok=True)
+
+    now = datetime.now(ZoneInfo("Asia/Seoul"))
+    report_file = report_dir / f"{now.strftime('%Y%m%d_%H%M%S')}.md"
+
+    status_map = {"passed": "PASS", "failed": "FAIL", "skipped": "SKIP"}
+    status_emoji = {"PASS": "✅", "FAIL": "❌", "SKIP": "⏭️"}
+
+    passed = sum(1 for r in _test_reports if r.outcome == "passed")
+    failed = sum(1 for r in _test_reports if r.outcome == "failed")
+    skipped = sum(1 for r in _test_reports if r.outcome == "skipped")
+    total = len(_test_reports)
+
+    lines = [
+        "# pytest 테스트 결과 리포트\n\n",
+        f"**생성 시각**: {now.strftime('%Y-%m-%d %H:%M:%S')}\n\n",
+        f"**총 테스트 수**: {total}\n",
+        f"**성공**: {passed}\n",
+        f"**실패**: {failed}\n",
+        f"**스킵**: {skipped}\n\n",
+        "---\n\n",
+        "## 테스트 결과 상세\n\n",
+        "| 번호 | 테스트 | 결과 | 소요시간(s) |\n",
+        "|------|--------|------|------------|\n",
+    ]
+
+    for i, report in enumerate(_test_reports, 1):
+        status = status_map.get(report.outcome, report.outcome.upper())
+        emoji = status_emoji.get(status, "❓")
+        lines.append(f"| {i} | `{report.nodeid}` | {emoji} {status} | {report.duration:.3f} |\n")
+
+    lines.append("\n---\n\n")
+    lines.append("✅ **모든 테스트 통과!**\n" if failed == 0 else f"❌ **{failed}개 테스트 실패**\n")
+
+    report_file.write_text("".join(lines), encoding="utf-8")
+    print(f"\n[conftest] 테스트 리포트 생성: {report_file}")
 
 
 @pytest.fixture(scope="session", autouse=True)

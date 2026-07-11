@@ -8,41 +8,24 @@ project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from src.helper_dev_utils import get_auto_logger
-from src.helper_dev_utils import set_pandas_extension
-import warnings
 import logging
 
-warnings.filterwarnings("ignore")
+from src.helper_dev_utils import get_auto_logger
+from src.helper_dev_utils import set_pandas_extension
 
-# 환경변수 시뮬레이션: DEBUG 레벨 및 파일 로깅 활성화
-import os
+log_dir = project_root / "logs"
 
-os.environ["LOG_LEVEL"] = "DEBUG"
-os.environ["LOG_FILE_ENABLED"] = "true"
-os.environ["LOG_USE_CENTRAL_FILE"] = "true"
-
-logger = get_auto_logger()
+logger = get_auto_logger(level=logging.DEBUG, file=True, log_dir=log_dir)
 logger.debug("First log - Logger is set up.")
+
+# 같은 이름으로 재호출해도 핸들러가 중복 등록되지 않는지, 같은 로그 파일을 공유하는지 확인
+logger = get_auto_logger(level=logging.DEBUG, file=True, log_dir=log_dir)
 logger.debug("Second log - Testing duplicate prevention.")
 
-# 로거 목록 출력
-print("\n전체 로거 목록:")
-for name, logger_obj in logging.Logger.manager.loggerDict.items():
-    if isinstance(logger_obj, logging.Logger) and name.startswith("helper"):
-        print(f"  {name}: {logger_obj}")
-        print(f"    handlers: {logger_obj.handlers}")
+print(f"\n핸들러 개수: {len(logger.handlers)}")
+print(f"핸들러: {logger.handlers}")
 
-# test_duplicate_log_file 로거 핸들러 확인
-test_logger = logging.getLogger("test_duplicate_log_file")
-print(f"\ntest_duplicate_log_file 로거:")
-print(f"  handlers: {test_logger.handlers}")
-print(f"  핸들러 개수: {len(test_logger.handlers)}")
-
-# 파일 핸들러 캐시 확인
-from src.helper_dev_utils import helper_logger
-
-print(f"\n파일 핸들러 캐시 크기: {len(helper_logger._file_handlers)}")
-print("캐시된 파일 경로:")
-for path in helper_logger._file_handlers.keys():
-    print(f"  {path}")
+log_file = next(f for f in logger.handlers if isinstance(f, logging.FileHandler)).baseFilename
+content = Path(log_file).read_text(encoding="utf-8")
+print(f"\n로그 파일: {log_file}")
+print(f"'Second log' 등장 횟수: {content.count('Second log')}")

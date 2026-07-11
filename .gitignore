@@ -73,3 +73,8 @@ Thumbs.db
 # Project specific
 *.log
 BUILD_COMPLETE.md
+/report/
+tests/report/
+
+
+.mypy_cache/

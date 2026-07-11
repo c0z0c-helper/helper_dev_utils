@@ -8,24 +8,21 @@ project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from src.helper_dev_utils import get_auto_logger
-from src.helper_dev_utils import set_pandas_extension
-import warnings
 import logging
 
-warnings.filterwarnings("ignore")
+from src.helper_dev_utils import get_auto_logger
+from src.helper_dev_utils import set_pandas_extension
 
-# 환경변수 시뮬레이션: DEBUG 레벨 설정
-import os
-
-os.environ["LOG_LEVEL"] = "DEBUG"
-
-logger = get_auto_logger()
+logger = get_auto_logger(level=logging.DEBUG)
 logger.debug("Logger is set up.")
+
+# 같은 이름으로 재호출해도 핸들러가 중복 등록되지 않는지 확인
+logger = get_auto_logger(level=logging.DEBUG)
+logger.debug("Second call - should not duplicate output.")
 
 # 로거 목록 출력
 print("\n전체 로거 목록:")
 for name, logger_obj in logging.Logger.manager.loggerDict.items():
-    if isinstance(logger_obj, logging.Logger) and name.startswith("helper"):
+    if isinstance(logger_obj, logging.Logger) and name.startswith("test"):
         print(f"  {name}: {logger_obj}")
         print(f"    handlers: {logger_obj.handlers}")

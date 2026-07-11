@@ -8,7 +8,7 @@ Python 개발 시 자주 사용하는 유틸리티 모음 라이브러리
 
 ## 주요 기능
 
-- **helper_logger**: 로깅 유틸리티 (콘솔/파일 핸들러, 환경변수 기반 설정, KST 타임존)
+- **helper_logger**: 로깅 유틸리티 (콘솔/파일 핸들러, 타임존 설정, 기본 KST)
 - **helper_pandas**: Pandas 확장 기능 (한글 컬럼 설명, 데이터 출력, HTML/콘솔 지원)
 - **helper_utils_print**: 출력 유틸리티 (디렉토리/JSON/딕셔너리 트리 구조 출력)
 - **helper_utils_colab**: 경로 관리 유틸리티 (로컬/Colab 환경 경로 자동 탐색)
@@ -35,6 +35,9 @@ pip install helper-dev-utils[jupyter]
 # PyTorch Tensor 지원
 pip install helper-dev-utils[torch]
 
+# Google Drive 관리 기능 지원 (empty_drive_trash 등, Colab 전용)
+pip install helper-dev-utils[google]
+
 # 모든 선택적 의존성 설치
 pip install helper-dev-utils[all]
 ```
@@ -43,43 +46,31 @@ pip install helper-dev-utils[all]
 
 ### 1. Logger (helper_logger)
 
-환경변수 또는 코드 기반으로 로깅을 쉽게 설정할 수 있습니다.
+콘솔(및 선택적 파일) 로깅을 위한 최소 유틸리티입니다. 레벨은 한 글자로 축약 출력되고,
+같은 이름으로 재호출해도 핸들러가 중복 등록되지 않습니다.
 
 ```python
-from helper_dev_utils import get_auto_logger, sample_logger_env
-
-# .env.example_logger 샘플 파일 생성
-sample_logger_env()
+from helper_dev_utils import get_auto_logger
+import logging
 
 # 자동으로 호출자 모듈명을 로거 이름으로 사용
 logger = get_auto_logger()
 logger.info("Hello World")
-logger.debug("디버그 메시지")
 logger.warning("경고 메시지")
 logger.error("에러 메시지")
+
+# 레벨/타임존 설정
+logger = get_auto_logger(level=logging.DEBUG, tz="UTC")
+logger.debug("디버그 메시지")
+
+# 파일 저장 활성화 (기본은 비활성화)
+# logs/YYYY/MM/DD/YYYYMMDD_HHMMSS.log 에 기록되며, 같은 프로세스의 로거들이 파일을 공유
+logger = get_auto_logger(file=True, log_dir="logs")
 ```
 
-**환경변수 설정 예시 (`.env` 파일)**:
-```env
-LOG_LEVEL=INFO
-LOG_CONSOLE_LEVEL=WARNING
-LOG_FILE_LEVEL=DEBUG
-LOG_DIR=./logs
-LOG_FILE_ENABLED=true
-```
-
-**로거 재구성**:
-```python
-# 방법 1: logger.set() 메서드 (권장)
-logger = get_auto_logger(console_level=logging.INFO)
-logger.info("초기 설정")
-logger.set(console_level=logging.DEBUG, file=True)
-logger.debug("재구성 후 DEBUG 출력")
-
-# 방법 2: reconfigure_logger() 함수
-from helper_dev_utils import reconfigure_logger
-logger = reconfigure_logger("app", console_level=logging.WARNING, file=True)
-```
+- `tz`: 타임스탬프에 적용할 타임존 (기본: `Asia/Seoul`)
+- `file`: 파일 저장 활성화 여부 (기본: `False`)
+- `log_dir`: 파일 저장 활성화 시 사용할 기준 디렉토리 (기본: `"logs"`)
 
 ### 2. Pandas Extension (helper_pandas)
 
@@ -234,13 +225,14 @@ helper_search(pd)
 - `matplotlib >= 3.2.0`
 - `numpy >= 1.16.0`
 - `pandas >= 1.0.0`
-- `pytz >= 2021.1`
+- `backports.zoneinfo >= 0.2.1` (Python < 3.9 에서만; 3.9+ 는 표준 라이브러리 `zoneinfo` 사용)
 
 ### 선택적 의존성
 
 - `python-dotenv >= 0.19.0` - `.env` 파일 지원
 - `IPython >= 7.0.0` - Jupyter/Colab 지원
 - `torch >= 1.0.0` - PyTorch Tensor 지원
+- `google-api-python-client >= 2.0.0` - `empty_drive_trash()` (Colab 전용)
 
 ## 개발 및 테스트
 
@@ -271,6 +263,9 @@ pytest tests/test_helper_utils_colab.py -v
 # 커버리지 포함 실행
 pytest tests --cov=helper_dev_utils --cov-report=html
 ```
+
+테스트를 실행하면 `tests/conftest.py`가 결과를 자동으로 수집하여
+`tests/report/YYYYMMDD_HHMMSS.md`에 통과/실패/스킵 여부가 포함된 표 형태의 리포트를 생성합니다.
 
 ### 테스트 환경 설정
 
@@ -337,3 +332,11 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 - `__init__.py`: `set_print_tree`, `set_log_tree` 패키지 레벨 노출 추가
 - `tests`: `test_helper_utils_colab.py` 실제 API(`google_driver`, `google_driver_path`, `cache`, `cache_path`)에 맞게 수정
 - `tests`: `test_helper_utils_print.py`에 `set_print_tree`/`set_log_tree` 전환 및 `None` 기본값 테스트 추가 (총 31개)
+
+### 0.6.0
+
+- `helper_logger`: 콘솔(+선택적 파일) 출력을 위한 최소 구현으로 리팩토링. 회전 로깅/중앙집중 파일/`.env` 우선순위 시스템/`reconfigure_logger`/`sample_logger_env`를 제거하고 `get_logger`, `get_auto_logger`만 유지
+- `helper_logger`: 레벨 축약을 `%(levelname).1s` 포맷으로 단순화, `tz` 인자로 타임존 설정 가능(기본 `Asia/Seoul`)
+- `helper_logger`: `file`(기본 `False`)/`log_dir`(기본 `"logs"`) 옵션 추가 — 활성화 시 `{log_dir}/YYYY/MM/DD/YYYYMMDD_HHMMSS.log`에 기록되며 같은 프로세스의 로거들이 파일을 공유
+- `__init__.py`: `sample_logger_env`, `reconfigure_logger` 패키지 레벨 노출 제거
+- `tests`: `conftest.py`에 pytest 훅 추가 — 테스트 실행 시 `tests/report/YYYYMMDD_HHMMSS.md`에 결과 표 자동 생성
