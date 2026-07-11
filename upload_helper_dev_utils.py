@@ -8,10 +8,20 @@ helper-dev-utils PyPI 업로드 스크립트
     --test: TestPyPI에 업로드 (기본값: PyPI)
 """
 
+import os
 import subprocess
 import sys
 import shutil
 from pathlib import Path
+
+# Windows 콘솔 코드페이지(cp949 등)와 무관하게 pip/build/twine이 항상 UTF-8로
+# 입출력하도록 강제한다. 미설정 시 콘솔 로케일에 따라 서브프로세스(특히 pip의
+# 격리 빌드 환경 설치 단계)에서 UnicodeDecodeError/UnicodeEncodeError가 발생할 수 있다.
+_SUBPROCESS_ENV = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+
+# twine은 기본적으로 사용자 홈 디렉터리의 .pypirc(%USERPROFILE%\.pypirc)만 찾고
+# 프로젝트 루트의 .pypirc는 무시한다. 이 스크립트 옆의 .pypirc를 명시적으로 지정한다.
+_PYPIRC_PATH = Path(__file__).parent / ".pypirc"
 
 
 def clean_build():
@@ -29,7 +39,16 @@ def clean_build():
 def build_package():
     """패키지 빌드"""
     print("패키지 빌드 중...")
-    result = subprocess.run([sys.executable, "-m", "build"], capture_output=True, text=True)
+    # --no-isolation: 격리된 임시 venv를 새로 만들지 않고 현재 환경의 setuptools/wheel을
+    # 그대로 사용한다. 격리 venv 생성 직후 방금 만들어진 DLL을 백신 실시간 검사가
+    # 잠그면서 발생하는 "DLL load failed" 오류(Windows)를 원천적으로 피할 수 있다.
+    result = subprocess.run(
+        [sys.executable, "-m", "build", "--no-isolation"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=_SUBPROCESS_ENV,
+    )
     
     if result.returncode != 0:
         print("빌드 실패:")
@@ -48,11 +67,13 @@ def upload_package(test_mode=False):
     print(f"{repo_name}에 업로드 중...")
     
     cmd = [sys.executable, "-m", "twine", "upload"]
+    if _PYPIRC_PATH.exists():
+        cmd.extend(["--config-file", str(_PYPIRC_PATH)])
     if test_mode:
         cmd.extend(["--repository", "testpypi"])
     cmd.append("dist/*")
     
-    result = subprocess.run(cmd)
+    result = subprocess.run(cmd, env=_SUBPROCESS_ENV)
     
     if result.returncode != 0:
         print(f"{repo_name} 업로드 실패")

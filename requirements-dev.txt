@@ -5,3 +5,12 @@ pytest-cov>=4.0.0
 black>=23.0.0
 ruff>=0.1.0
 python-dotenv>=0.19.0
+
+# PyPI 배포 (upload_helper_dev_utils.py, .github/workflows/publish.yml 에서 사용)
+build>=1.0.3
+twine>=4.0.0
+
+# build --no-isolation 이 격리 venv 없이 현재 환경의 setuptools/wheel을 바로 사용하기
+# 위해 필요 (pyproject.toml의 [build-system] requires 와 동일)
+setuptools>=61.0
+wheel
