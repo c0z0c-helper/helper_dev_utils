@@ -329,3 +329,11 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
 - `helper_help`: 함수/메서드 시그니처 및 docstring 출력 기능 추가
 - `helper_search`: 모듈 내 함수·클래스 이름 기반 검색 기능 추가
+
+### 0.5.10
+
+- `helper_utils_print`: `set_print_tree()` / `set_log_tree()` 함수 추가 - 트리 출력 시 `print` 또는 `logger.info` 전환 가능
+- `helper_utils_print`: `print_json_tree`, `print_dic_tree`의 `max_depth`, `list_count` 기본값을 `None`(무한대)으로 변경
+- `__init__.py`: `set_print_tree`, `set_log_tree` 패키지 레벨 노출 추가
+- `tests`: `test_helper_utils_colab.py` 실제 API(`google_driver`, `google_driver_path`, `cache`, `cache_path`)에 맞게 수정
+- `tests`: `test_helper_utils_print.py`에 `set_print_tree`/`set_log_tree` 전환 및 `None` 기본값 테스트 추가 (총 31개)

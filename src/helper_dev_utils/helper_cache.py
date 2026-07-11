@@ -28,15 +28,15 @@ _cache_local = helper_path_finder.find_cache_root()
 _cache_colab = r"/content/cache/.cache"
 
 
-def cache(cache_local: str | None = None, cache_colab: str | None = None) -> str:
+def cache(cache_local: Optional[str] = None, cache_colab: Optional[str] = None) -> str:
     """
     로컬 또는 Colab 환경에 맞는 캐시 루트 경로를 반환합니다.
 
     Parameters
     ----------
-    cache_local : str | None
+    cache_local : Optional[str]
         로컬 환경에서 사용할 캐시 경로
-    cache_colab : str | None
+    cache_colab : Optional[str]
         Colab 환경에서 사용할 캐시 경로
 
     Returns

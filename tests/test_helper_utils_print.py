@@ -23,7 +23,13 @@ import pytest
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
-from helper_dev_utils import print_dir_tree, print_json_tree, print_dic_tree
+from helper_dev_utils import (
+    print_dir_tree,
+    print_json_tree,
+    print_dic_tree,
+    set_print_tree,
+    set_log_tree,
+)
 
 
 # =============================================================================
@@ -249,3 +255,76 @@ class TestTypeValidation:
         print_dic_tree(sample_dict, max_depth=10)
         print_dic_tree(sample_dict, print_value=False)
         print_dic_tree(sample_dict, list_count=0)
+
+
+# =============================================================================
+# 테스트 클래스 6: set_print_tree / set_log_tree
+# =============================================================================
+
+
+class TestSetPrintMode:
+    """set_print_tree / set_log_tree 전환 테스트"""
+
+    def test_set_print_tree(self, sample_dict, temp_dir_structure):
+        """set_print_tree 후 print로 출력 - 예외 없이 실행"""
+        set_print_tree()
+        print_dir_tree(temp_dir_structure)
+        print_json_tree(sample_dict)
+        print_dic_tree(sample_dict)
+
+    def test_set_log_tree(self, sample_dict, temp_dir_structure):
+        """set_log_tree 후 logger.info로 출력 - 예외 없이 실행"""
+        set_log_tree()
+        print_dir_tree(temp_dir_structure)
+        print_json_tree(sample_dict)
+        print_dic_tree(sample_dict)
+
+    def test_toggle_between_modes(self, sample_dict):
+        """print/log 모드 교차 전환 테스트"""
+        set_print_tree()
+        print_json_tree(sample_dict, max_depth=1)
+        set_log_tree()
+        print_json_tree(sample_dict, max_depth=1)
+        set_print_tree()
+        print_dic_tree(sample_dict, max_depth=1)
+
+    def teardown_method(self):
+        """테스트 후 기본값(print)으로 복원"""
+        set_print_tree()
+
+
+# =============================================================================
+# 테스트 클래스 7: max_depth=None / list_count=None (무한대)
+# =============================================================================
+
+
+class TestNoneDefaults:
+    """max_depth=None, list_count=None 무한대 동작 테스트"""
+
+    def test_json_tree_max_depth_none(self, sample_json):
+        """max_depth=None → 전체 깊이 탐색"""
+        print_json_tree(sample_json, max_depth=None)
+
+    def test_json_tree_list_count_none(self):
+        """list_count=None → 리스트 전체 표시"""
+        data = {"items": list(range(10))}
+        print_json_tree(data, list_count=None)
+
+    def test_dic_tree_max_depth_none(self, sample_dict):
+        """max_depth=None → 전체 깊이 탐색"""
+        print_dic_tree(sample_dict, max_depth=None)
+
+    def test_dic_tree_list_count_none(self):
+        """list_count=None → 리스트 전체 표시"""
+        data = {"values": [{"a": i} for i in range(5)]}
+        print_dic_tree(data, list_count=None)
+
+    def test_json_tree_defaults(self):
+        """기본값(max_depth=None, list_count=None) 호출"""
+        data = {"k": [1, 2, 3], "nested": {"x": {"y": 1}}}
+        print_json_tree(data)
+
+    def test_dic_tree_defaults(self):
+        """기본값(max_depth=None, list_count=None) 호출"""
+        data = {"k": [1, 2, 3], "nested": {"x": {"y": 1}}}
+        print_dic_tree(data)

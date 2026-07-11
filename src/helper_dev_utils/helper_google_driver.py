@@ -32,8 +32,8 @@ _google_driver_colab = r"/content/drive/MyDrive"
 
 
 def google_driver(
-    google_driver_local: str | None = None,
-    google_driver_colab: str | None = None,
+    google_driver_local: Optional[str] = None,
+    google_driver_colab: Optional[str] = None,
     auto_mount: bool = True,
 ) -> str:
     """
@@ -41,9 +41,9 @@ def google_driver(
 
     Parameters
     ----------
-    google_driver_local : str | None
+    google_driver_local : Optional[str]
         로컬 환경에서 사용할 드라이브 경로
-    google_driver_colab : str | None
+    google_driver_colab : Optional[str]
         Colab 환경에서 사용할 드라이브 경로
     auto_mount : bool
         Colab 환경에서 자동 마운트 여부 (기본값: True)

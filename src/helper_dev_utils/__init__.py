@@ -35,7 +35,7 @@ Python 유틸리티 모음 라이브러리
     cache_path = my_cache()    # 캐시 경로
 """
 
-__version__ = "0.5.9"
+__version__ = "0.5.10"
 
 # Import main functions from each module
 from .helper_logger import (
@@ -53,6 +53,8 @@ from .helper_utils_print import (
     print_dir_tree,
     print_json_tree,
     print_dic_tree,
+    set_print_tree,
+    set_log_tree,
 )
 
 from .helper_utils_colab import (
@@ -88,6 +90,8 @@ __all__ = [
     "print_dir_tree",
     "print_json_tree",
     "print_dic_tree",
+    "set_print_tree",
+    "set_log_tree",
     # Colab/Path utilities
     "google_driver",
     "google_driver_path",

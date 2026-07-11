@@ -21,6 +21,7 @@ logger = helper_logger.get_auto_logger()
 
 try:
     from dotenv import load_dotenv, dotenv_values
+
     DOTENV_AVAILABLE = True
 except ImportError:
     DOTENV_AVAILABLE = False
@@ -28,19 +29,22 @@ except ImportError:
 try:
     import IPython
     from IPython.display import HTML
+
     IPYTHON_AVAILABLE = True
 except ImportError:
     IPYTHON_AVAILABLE = False
-    
+
 try:
     import google.colab
     from google.colab import drive
+
     IS_COLAB = True
 except ImportError:
     IS_COLAB = False
 
 try:
     import numpy as np
+
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
@@ -48,20 +52,41 @@ except ImportError:
 
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
     torch = None
 
-#_print = print  # 기본 _print 함수를 user_print로 저장
+_print = print  # 기본 _print 함수를 user_print로 저장
+# _print = logger.info  # logger의 info 메서드로 대체
 
-_print = logger.info  # logger의 info 메서드로 대체
+
+def set_log_tree() -> None:
+    """트리 출력 함수를 logger.info로 전환.
+
+    print_dir_tree, print_json_tree, print_dic_tree 등 트리 출력 함수가
+    내부적으로 사용하는 _print를 logger.info로 설정합니다.
+    """
+    global _print
+    _print = logger.info
+
+
+def set_print_tree() -> None:
+    """트리 출력 함수를 내장 print로 전환.
+
+    print_dir_tree, print_json_tree, print_dic_tree 등 트리 출력 함수가
+    내부적으로 사용하는 _print를 내장 print 함수로 설정합니다.
+    """
+    global _print
+    _print = print
+
 
 def print_dir_tree(
     root: str,
     indent: str = "",
-    max_file_list: Optional[int] = 3,
-    max_dir_list: Optional[int] = 3,
+    max_file_list: Optional[int] = None,
+    max_dir_list: Optional[int] = None,
 ) -> None:
     """디렉토리 트리 구조를 계층형(tree) 형식으로 출력.
 
@@ -152,14 +177,14 @@ def print_dir_tree(
         _print(indent + "   " + "... dirs")
     if has_more_files:
         _print(indent + "   " + "... files")
-            
+
 
 def print_json_tree(
     data: Any,
     indent: str = "",
-    max_depth: int = 4,
+    max_depth: Optional[int] = None,
     _depth: int = 0,
-    list_count: int = 1,
+    list_count: Optional[int] = None,
     print_value: bool = True,
     limit_value_text: int = 100,
 ) -> None:
@@ -173,10 +198,11 @@ def print_json_tree(
         data (Any): 출력할 데이터(dict, list, 또는 기본 타입).
         indent (str, optional): 들여쓰기 문자열(재귀 호출 시 누적).
             Defaults to "".
-        max_depth (int, optional): 탐색할 최대 깊이. Defaults to 4.
+        max_depth (Optional[int], optional): 탐색할 최대 깊이.
+            None이면 무한 탐색. Defaults to None.
         _depth (int, optional): 현재 재귀 깊이(내부 사용). Defaults to 0.
-        list_count (int, optional): 리스트에서 앞/뒤로 표시할 항목 수.
-            Defaults to 1.
+        list_count (Optional[int], optional): 리스트에서 앞/뒤로 표시할 항목 수.
+            None이면 전체 표시. Defaults to None.
         print_value (bool, optional): True이면 값도 출력, False이면 타입만
             표시. Defaults to True.
         limit_value_text (int, optional): 값 문자열의 최대 표시 길이.
@@ -185,8 +211,8 @@ def print_json_tree(
     Returns:
         None
     """
-    # 최대 깊이 초과 시 재귀 중단
-    if _depth > max_depth:
+    # 최대 깊이 초과 시 재귀 중단 (None이면 무한 탐색)
+    if max_depth is not None and _depth > max_depth:
         return
 
     if isinstance(data, dict):
@@ -209,11 +235,7 @@ def print_json_tree(
                 if print_value:
                     vstr = str(value)
                     # 길이 초과 시 앞 30자만 표시
-                    short = (
-                        vstr
-                        if len(vstr) < limit_value_text
-                        else f"{vstr[:30]}..."
-                    )
+                    short = vstr if len(vstr) < limit_value_text else f"{vstr[:30]}..."
                     _print(f"{indent}|-- {key}({type(value).__name__}): {short}")
                 else:
                     _print(f"{indent}|-- {key}({type(value).__name__})")
@@ -249,18 +271,10 @@ def print_json_tree(
                 else:
                     if print_value:
                         vstr = str(item)
-                        short = (
-                            vstr
-                            if len(vstr) < limit_value_text
-                            else f"{vstr[:30]}..."
-                        )
-                        _print(
-                            f"{indent}    |-- [{i}]({type(item).__name__}): {short}"
-                        )
+                        short = vstr if len(vstr) < limit_value_text else f"{vstr[:30]}..."
+                        _print(f"{indent}    |-- [{i}]({type(item).__name__}): {short}")
                     else:
-                        _print(
-                            f"{indent}    |-- [{i}]({type(item).__name__})"
-                        )
+                        _print(f"{indent}    |-- [{i}]({type(item).__name__})")
 
             # 중간 생략 표시
             omitted = L - 2 * n
@@ -283,18 +297,10 @@ def print_json_tree(
                 else:
                     if print_value:
                         vstr = str(item)
-                        short = (
-                            vstr
-                            if len(vstr) < limit_value_text
-                            else f"{vstr[:30]}..."
-                        )
-                        _print(
-                            f"{indent}    |-- [{j}]({type(item).__name__}): {short}"
-                        )
+                        short = vstr if len(vstr) < limit_value_text else f"{vstr[:30]}..."
+                        _print(f"{indent}    |-- [{j}]({type(item).__name__}): {short}")
                     else:
-                        _print(
-                            f"{indent}    |-- [{j}]({type(item).__name__})"
-                        )
+                        _print(f"{indent}    |-- [{j}]({type(item).__name__})")
 
         else:
             # 리스트가 짧거나 list_count=0인 경우 전체 출력
@@ -314,37 +320,26 @@ def print_json_tree(
                 else:
                     if print_value:
                         vstr = str(item)
-                        short = (
-                            vstr
-                            if len(vstr) < limit_value_text
-                            else f"{vstr[:30]}..."
-                        )
-                        _print(
-                            f"{indent}    |-- [{i}]({type(item).__name__}): {short}"
-                        )
+                        short = vstr if len(vstr) < limit_value_text else f"{vstr[:30]}..."
+                        _print(f"{indent}    |-- [{i}]({type(item).__name__}): {short}")
                     else:
-                        _print(
-                            f"{indent}    |-- [{i}]({type(item).__name__})"
-                        )
+                        _print(f"{indent}    |-- [{i}]({type(item).__name__})")
     else:
         # 기본 타입(str, int, float 등) 처리
         if print_value:
             vstr = str(data)
-            short = (
-                vstr
-                if len(vstr) < limit_value_text
-                else f"{vstr[:30]}..."
-            )
+            short = vstr if len(vstr) < limit_value_text else f"{vstr[:30]}..."
             _print(f"{indent}{type(data).__name__}: {short}")
         else:
             _print(f"{indent}{type(data).__name__}")
 
+
 def print_dic_tree(
     dic_data: Any,
     indent: str = "",
-    max_depth: int = 3,
+    max_depth: Optional[int] = None,
     _depth: int = 0,
-    list_count: int = 1,
+    list_count: Optional[int] = None,
     print_value: bool = True,
     limit_value_text: int = 100,
 ) -> None:
@@ -360,10 +355,11 @@ def print_dic_tree(
             또는 기본 타입).
         indent (str, optional): 들여쓰기 문자열(재귀 호출 시 누적).
             Defaults to "".
-        max_depth (int, optional): 탐색할 최대 깊이. Defaults to 3.
+        max_depth (Optional[int], optional): 탐색할 최대 깊이.
+            None이면 무한 탐색. Defaults to None.
         _depth (int, optional): 현재 재귀 깊이(내부 사용). Defaults to 0.
-        list_count (int, optional): 리스트/튜플에서 앞/뒤로 표시할 항목 수.
-            Defaults to 1.
+        list_count (Optional[int], optional): 리스트/튜플에서 앞/뒤로 표시할 항목 수.
+            None이면 전체 표시. Defaults to None.
         print_value (bool, optional): True이면 값도 출력, False이면 타입과
             shape/dtype만 표시. Defaults to True.
         limit_value_text (int, optional): 값 문자열의 최대 표시 길이.
@@ -377,8 +373,8 @@ def print_dic_tree(
           사용
         - 박스드로잉 문자: ├─(분기), │ (연결), └─(끝)
     """
-    # 최대 깊이 초과 시 재귀 중단
-    if _depth > max_depth:
+    # 최대 깊이 초과 시 재귀 중단 (None이면 무한 탐색)
+    if max_depth is not None and _depth > max_depth:
         return
 
     if isinstance(dic_data, dict):
@@ -402,43 +398,32 @@ def print_dic_tree(
                 dtype = str(value.dtype)
                 if print_value:
                     preview = str(value)
-                    preview_str = (
-                        preview[:limit_value_text]
-                        + ("..." if len(preview) > limit_value_text else "")
+                    preview_str = preview[:limit_value_text] + (
+                        "..." if len(preview) > limit_value_text else ""
                     )
-                    _print(
-                        f"{indent}├─ {key} [Tensor] shape={shape} dtype={dtype}"
-                    )
+                    _print(f"{indent}├─ {key} [Tensor] shape={shape} dtype={dtype}")
                     _print(f"{indent}│  └─ {preview_str}")
                 else:
-                    _print(
-                        f"{indent}├─ {key} [Tensor] shape={shape} dtype={dtype}"
-                    )
+                    _print(f"{indent}├─ {key} [Tensor] shape={shape} dtype={dtype}")
             elif NUMPY_AVAILABLE and isinstance(value, np.ndarray):
                 # NumPy 배열: shape와 dtype 표시
                 shape = value.shape
                 dtype = value.dtype
                 if print_value:
                     preview = str(value)
-                    preview_str = (
-                        preview[:limit_value_text]
-                        + ("..." if len(preview) > limit_value_text else "")
+                    preview_str = preview[:limit_value_text] + (
+                        "..." if len(preview) > limit_value_text else ""
                     )
-                    _print(
-                        f"{indent}├─ {key} [ndarray] shape={shape} dtype={dtype}"
-                    )
+                    _print(f"{indent}├─ {key} [ndarray] shape={shape} dtype={dtype}")
                     _print(f"{indent}│  └─ {preview_str}")
                 else:
-                    _print(
-                        f"{indent}├─ {key} [ndarray] shape={shape} dtype={dtype}"
-                    )
+                    _print(f"{indent}├─ {key} [ndarray] shape={shape} dtype={dtype}")
             else:
                 # 기본 값: 타입과 함께 표시
                 if print_value:
                     val_str = str(value)
-                    short = (
-                        val_str[:limit_value_text]
-                        + ("..." if len(val_str) > limit_value_text else "")
+                    short = val_str[:limit_value_text] + (
+                        "..." if len(val_str) > limit_value_text else ""
                     )
                     _print(f"{indent}├─ {key} [{type(value).__name__}]: {short}")
                 else:
@@ -475,47 +460,36 @@ def print_dic_tree(
                     dtype = str(item.dtype)
                     if print_value:
                         preview = str(item)
-                        preview_str = (
-                            preview[:limit_value_text]
-                            + ("..." if len(preview) > limit_value_text else "")
+                        preview_str = preview[:limit_value_text] + (
+                            "..." if len(preview) > limit_value_text else ""
                         )
                         _print(
                             f"{indent}├─ [{i}] [Tensor] shape={shape} dtype={dtype}: {preview_str}"
                         )
                     else:
-                        _print(
-                            f"{indent}├─ [{i}] [Tensor] shape={shape} dtype={dtype}"
-                        )
+                        _print(f"{indent}├─ [{i}] [Tensor] shape={shape} dtype={dtype}")
                 elif NUMPY_AVAILABLE and isinstance(item, np.ndarray):
                     shape = item.shape
                     dtype = item.dtype
                     if print_value:
                         preview = str(item)
-                        preview_str = (
-                            preview[:limit_value_text]
-                            + ("..." if len(preview) > limit_value_text else "")
+                        preview_str = preview[:limit_value_text] + (
+                            "..." if len(preview) > limit_value_text else ""
                         )
                         _print(
                             f"{indent}├─ [{i}] [ndarray] shape={shape} dtype={dtype}: {preview_str}"
                         )
                     else:
-                        _print(
-                            f"{indent}├─ [{i}] [ndarray] shape={shape} dtype={dtype}"
-                        )
+                        _print(f"{indent}├─ [{i}] [ndarray] shape={shape} dtype={dtype}")
                 else:
                     if print_value:
                         val_str = str(item)
-                        short = (
-                            val_str[:limit_value_text]
-                            + ("..." if len(val_str) > limit_value_text else "")
+                        short = val_str[:limit_value_text] + (
+                            "..." if len(val_str) > limit_value_text else ""
                         )
-                        _print(
-                            f"{indent}├─ [{i}] [{type(item).__name__}]: {short}"
-                        )
+                        _print(f"{indent}├─ [{i}] [{type(item).__name__}]: {short}")
                     else:
-                        _print(
-                            f"{indent}├─ [{i}] [{type(item).__name__}]"
-                        )
+                        _print(f"{indent}├─ [{i}] [{type(item).__name__}]")
 
             # 중간 생략 표시
             omitted = L - 2 * n
@@ -540,47 +514,36 @@ def print_dic_tree(
                     dtype = str(item.dtype)
                     if print_value:
                         preview = str(item)
-                        preview_str = (
-                            preview[:limit_value_text]
-                            + ("..." if len(preview) > limit_value_text else "")
+                        preview_str = preview[:limit_value_text] + (
+                            "..." if len(preview) > limit_value_text else ""
                         )
                         _print(
                             f"{indent}├─ [{j}] [Tensor] shape={shape} dtype={dtype}: {preview_str}"
                         )
                     else:
-                        _print(
-                            f"{indent}├─ [{j}] [Tensor] shape={shape} dtype={dtype}"
-                        )
+                        _print(f"{indent}├─ [{j}] [Tensor] shape={shape} dtype={dtype}")
                 elif NUMPY_AVAILABLE and isinstance(item, np.ndarray):
                     shape = item.shape
                     dtype = item.dtype
                     if print_value:
                         preview = str(item)
-                        preview_str = (
-                            preview[:limit_value_text]
-                            + ("..." if len(preview) > limit_value_text else "")
+                        preview_str = preview[:limit_value_text] + (
+                            "..." if len(preview) > limit_value_text else ""
                         )
                         _print(
                             f"{indent}├─ [{j}] [ndarray] shape={shape} dtype={dtype}: {preview_str}"
                         )
                     else:
-                        _print(
-                            f"{indent}├─ [{j}] [ndarray] shape={shape} dtype={dtype}"
-                        )
+                        _print(f"{indent}├─ [{j}] [ndarray] shape={shape} dtype={dtype}")
                 else:
                     if print_value:
                         val_str = str(item)
-                        short = (
-                            val_str[:limit_value_text]
-                            + ("..." if len(val_str) > limit_value_text else "")
+                        short = val_str[:limit_value_text] + (
+                            "..." if len(val_str) > limit_value_text else ""
                         )
-                        _print(
-                            f"{indent}├─ [{j}] [{type(item).__name__}]: {short}"
-                        )
+                        _print(f"{indent}├─ [{j}] [{type(item).__name__}]: {short}")
                     else:
-                        _print(
-                            f"{indent}├─ [{j}] [{type(item).__name__}]"
-                        )
+                        _print(f"{indent}├─ [{j}] [{type(item).__name__}]")
         else:
             # 리스트가 짧거나 list_count=0인 경우 전체 출력
             for i, item in enumerate(dic_data):
@@ -600,47 +563,36 @@ def print_dic_tree(
                     dtype = str(item.dtype)
                     if print_value:
                         preview = str(item)
-                        preview_str = (
-                            preview[:limit_value_text]
-                            + ("..." if len(preview) > limit_value_text else "")
+                        preview_str = preview[:limit_value_text] + (
+                            "..." if len(preview) > limit_value_text else ""
                         )
                         _print(
                             f"{indent}├─ [{i}] [Tensor] shape={shape} dtype={dtype}: {preview_str}"
                         )
                     else:
-                        _print(
-                            f"{indent}├─ [{i}] [Tensor] shape={shape} dtype={dtype}"
-                        )
+                        _print(f"{indent}├─ [{i}] [Tensor] shape={shape} dtype={dtype}")
                 elif NUMPY_AVAILABLE and isinstance(item, np.ndarray):
                     shape = item.shape
                     dtype = item.dtype
                     if print_value:
                         preview = str(item)
-                        preview_str = (
-                            preview[:limit_value_text]
-                            + ("..." if len(preview) > limit_value_text else "")
+                        preview_str = preview[:limit_value_text] + (
+                            "..." if len(preview) > limit_value_text else ""
                         )
                         _print(
                             f"{indent}├─ [{i}] [ndarray] shape={shape} dtype={dtype}: {preview_str}"
                         )
                     else:
-                        _print(
-                            f"{indent}├─ [{i}] [ndarray] shape={shape} dtype={dtype}"
-                        )
+                        _print(f"{indent}├─ [{i}] [ndarray] shape={shape} dtype={dtype}")
                 else:
                     if print_value:
                         val_str = str(item)
-                        short = (
-                            val_str[:limit_value_text]
-                            + ("..." if len(val_str) > limit_value_text else "")
+                        short = val_str[:limit_value_text] + (
+                            "..." if len(val_str) > limit_value_text else ""
                         )
-                        _print(
-                            f"{indent}├─ [{i}] [{type(item).__name__}]: {short}"
-                        )
+                        _print(f"{indent}├─ [{i}] [{type(item).__name__}]: {short}")
                     else:
-                        _print(
-                            f"{indent}├─ [{i}] [{type(item).__name__}]"
-                        )
+                        _print(f"{indent}├─ [{i}] [{type(item).__name__}]")
 
     elif TORCH_AVAILABLE and torch.is_tensor(dic_data):
         # 단일 Tensor 처리
@@ -648,9 +600,8 @@ def print_dic_tree(
         dtype = str(dic_data.dtype)
         if print_value:
             preview = str(dic_data)
-            preview_str = (
-                preview[:limit_value_text]
-                + ("..." if len(preview) > limit_value_text else "")
+            preview_str = preview[:limit_value_text] + (
+                "..." if len(preview) > limit_value_text else ""
             )
             _print(f"{indent}└─ Tensor shape={shape} dtype={dtype}")
             _print(f"{indent}   {preview_str}")
@@ -663,9 +614,8 @@ def print_dic_tree(
         dtype = dic_data.dtype
         if print_value:
             preview = str(dic_data)
-            preview_str = (
-                preview[:limit_value_text]
-                + ("..." if len(preview) > limit_value_text else "")
+            preview_str = preview[:limit_value_text] + (
+                "..." if len(preview) > limit_value_text else ""
             )
             _print(f"{indent}└─ ndarray shape={shape} dtype={dtype}")
             _print(f"{indent}   {preview_str}")
@@ -676,10 +626,7 @@ def print_dic_tree(
         # 기본 타입(str, int, float 등) 처리
         if print_value:
             val_str = str(dic_data)
-            short = (
-                val_str[:limit_value_text]
-                + ("..." if len(val_str) > limit_value_text else "")
-            )
+            short = val_str[:limit_value_text] + ("..." if len(val_str) > limit_value_text else "")
             _print(f"{indent}└─ {type(dic_data).__name__}: {short}")
         else:
             _print(f"{indent}└─ {type(dic_data).__name__}")
@@ -687,20 +634,20 @@ def print_dic_tree(
 
 if __name__ == "__main__":
     """Main test: 디렉토리 트리 및 JSON 트리 구조 출력 데모"""
-    
+
     # 현재 디렉토리 경로
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
-    
+
     _print("=" * 60)
     _print("MAIN TEST: helper_utils_print 데모")
     _print("=" * 60)
-    
+
     # 1. print_dir_tree 테스트 (상위 디렉토리 출력)
     _print("[테스트 1] print_dir_tree - 부모 디렉토리 구조")
     _print(f"경로: {parent_dir}\n")
     print_dir_tree(parent_dir, max_file_list=3, max_dir_list=3)
-    
+
     # 2. print_json_tree 테스트
     _print("=" * 60)
     _print("[테스트 2] print_json_tree - 샘플 딕셔너리 구조")
@@ -711,15 +658,12 @@ if __name__ == "__main__":
         "items": [
             {"id": 1, "label": "item_a"},
             {"id": 2, "label": "item_b"},
-            {"id": 3, "label": "item_c"}
+            {"id": 3, "label": "item_c"},
         ],
-        "metadata": {
-            "created": "2025-12-05",
-            "author": "test_user"
-        }
+        "metadata": {"created": "2025-12-05", "author": "test_user"},
     }
     print_json_tree(sample_dict, max_depth=3, list_count=1, print_value=True)
-    
+
     _print("=" * 60)
     _print("MAIN TEST 완료")
     _print("=" * 60)
