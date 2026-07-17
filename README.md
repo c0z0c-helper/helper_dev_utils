@@ -340,3 +340,6 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 - `helper_logger`: `file`(기본 `False`)/`log_dir`(기본 `"logs"`) 옵션 추가 — 활성화 시 `{log_dir}/YYYY/MM/DD/YYYYMMDD_HHMMSS.log`에 기록되며 같은 프로세스의 로거들이 파일을 공유
 - `__init__.py`: `sample_logger_env`, `reconfigure_logger` 패키지 레벨 노출 제거
 - `tests`: `conftest.py`에 pytest 훅 추가 — 테스트 실행 시 `tests/report/YYYYMMDD_HHMMSS.md`에 결과 표 자동 생성
+
+### 0.6.1
+- PEP 561 py.typed 적용

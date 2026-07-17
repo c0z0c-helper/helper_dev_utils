@@ -2113,7 +2113,7 @@ wheels = [
 
 [[package]]
 name = "helper-dev-utils"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "backports-zoneinfo", marker = "python_full_version < '3.9'" },
