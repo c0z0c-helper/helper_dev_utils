@@ -34,13 +34,6 @@ except ImportError:
     import helper_colab_auth
 
 try:
-    from dotenv import load_dotenv, dotenv_values
-
-    DOTENV_AVAILABLE = True
-except ImportError:
-    DOTENV_AVAILABLE = False
-
-try:
     import IPython
     from IPython.display import HTML
 

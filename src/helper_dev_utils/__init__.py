@@ -35,7 +35,7 @@ Python 유틸리티 모음 라이브러리
     cache_path = my_cache()    # 캐시 경로
 """
 
-__version__ = "0.6.4"
+__version__ = "0.6.5"
 
 # Import main functions from each module
 from .helper_logger import (
@@ -59,7 +59,6 @@ from .helper_utils_colab import (
     cache_path,
     IS_COLAB,
     IPYTHON_AVAILABLE,
-    DOTENV_AVAILABLE,
 )
 
 from .helper_colab_auth import (
@@ -90,7 +89,6 @@ __all__ = [
     # Environment detection
     "IS_COLAB",
     "IPYTHON_AVAILABLE",
-    "DOTENV_AVAILABLE",
     # Colab authentication
     "google_authenticate",
     "google_get_secret",

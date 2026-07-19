@@ -29,12 +29,6 @@ try:
 except ImportError:
     from backports.zoneinfo import ZoneInfo  # type: ignore
 
-try:
-    from dotenv import load_dotenv
-    DOTENV_AVAILABLE = True
-except ImportError:
-    DOTENV_AVAILABLE = False
-
 DEFAULT_TZ = "Asia/Seoul"
 DEFAULT_FMT = "%(asctime)s [%(levelname).1s] %(name)s - %(message)s"
 DEFAULT_DATEFMT = "%y-%m-%d %H:%M:%S"
@@ -182,8 +176,6 @@ def get_logger(
         >>> logger = get_logger(name="")  # 이름 없는(anonymous) 로거
         >>> logger.info("hi")  # ... app (main.py:10) - hi
     """
-    if DOTENV_AVAILABLE:
-        load_dotenv(override=True)
 
     if name is None:
         name = _env_str("LOGGER_NAME") or ""
@@ -230,6 +222,13 @@ def get_logger(
 
 
 if __name__ == "__main__":
+    
+    try:
+        from dotenv import load_dotenv  # type: ignore
+        load_dotenv(override=True)  # .env 파일이 있으면 환경 변수 로드
+    except ImportError:
+        pass
+    
     logger = get_logger("demo")
     logger.debug("debug message (숨김, 기본 레벨은 INFO)")
     logger.info("info message")

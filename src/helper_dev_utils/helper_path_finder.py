@@ -15,14 +15,6 @@ try:
 except ImportError:
     import helper_logger
 
-try:
-    from dotenv import load_dotenv
-
-    DOTENV_AVAILABLE = True
-except ImportError:
-    DOTENV_AVAILABLE = False
-
-
 def find_cache_root(app_name: str = ".cache") -> str:
     """
     캐시 디렉토리를 다음 우선순위로 찾습니다:
@@ -43,26 +35,22 @@ def find_cache_root(app_name: str = ".cache") -> str:
     logger = helper_logger.get_logger()
 
     # 1순위: .env 파일의 MY_CACHE_LOCAL
-    if DOTENV_AVAILABLE:
-        try:
-            env_path = os.path.join(os.getcwd(), ".env")
-            if os.path.exists(env_path):
-                load_dotenv(env_path, override=True)
-                my_cache_env = os.getenv("MY_CACHE_LOCAL")
-                if my_cache_env:
-                    if os.path.exists(my_cache_env) and os.path.isdir(my_cache_env):
-                        logger.debug("Found MY_CACHE_LOCAL from .env: %s", my_cache_env)
-                        return os.path.abspath(my_cache_env)
-                    try:
-                        os.makedirs(my_cache_env, exist_ok=True)
-                        logger.debug("Created MY_CACHE_LOCAL from .env: %s", my_cache_env)
-                        return os.path.abspath(my_cache_env)
-                    except (OSError, PermissionError) as e:
-                        logger.warning(
-                            "Failed to create MY_CACHE_LOCAL from .env (%s): %s", my_cache_env, e
-                        )
-        except Exception as e:
-            logger.warning("Failed to load .env file: %s", e)
+    try:
+        my_cache_env = os.getenv("MY_CACHE_LOCAL")
+        if my_cache_env:
+            if os.path.exists(my_cache_env) and os.path.isdir(my_cache_env):
+                logger.debug("Found MY_CACHE_LOCAL from .env: %s", my_cache_env)
+                return os.path.abspath(my_cache_env)
+            try:
+                os.makedirs(my_cache_env, exist_ok=True)
+                logger.debug("Created MY_CACHE_LOCAL from .env: %s", my_cache_env)
+                return os.path.abspath(my_cache_env)
+            except (OSError, PermissionError) as e:
+                logger.warning(
+                    "Failed to create MY_CACHE_LOCAL from .env (%s): %s", my_cache_env, e
+                )
+    except Exception as e:
+        logger.warning("Failed to load .env file: %s", e)
 
     # 2순위: OS별 자동 탐색
     search_paths = []
@@ -111,26 +99,22 @@ def find_google_drive() -> str:
     logger = helper_logger.get_logger()
 
     # 1순위: .env 파일의 MY_DRIVER_LOCAL
-    if DOTENV_AVAILABLE:
-        try:
-            env_path = os.path.join(os.getcwd(), ".env")
-            if os.path.exists(env_path):
-                load_dotenv(env_path, override=True)
-                my_driver_env = os.getenv("MY_DRIVER_LOCAL")
-                if my_driver_env:
-                    if os.path.exists(my_driver_env) and os.path.isdir(my_driver_env):
-                        logger.debug("Found MY_DRIVER_LOCAL from .env: %s", my_driver_env)
-                        return os.path.abspath(my_driver_env)
-                    try:
-                        os.makedirs(my_driver_env, exist_ok=True)
-                        logger.debug("Created MY_DRIVER_LOCAL from .env: %s", my_driver_env)
-                        return os.path.abspath(my_driver_env)
-                    except (OSError, PermissionError) as e:
-                        logger.warning(
-                            "Failed to create MY_DRIVER_LOCAL from .env (%s): %s", my_driver_env, e
-                        )
-        except Exception as e:
-            logger.warning("Failed to load .env file: %s", e)
+    try:
+        my_driver_env = os.getenv("MY_DRIVER_LOCAL")
+        if my_driver_env:
+            if os.path.exists(my_driver_env) and os.path.isdir(my_driver_env):
+                logger.debug("Found MY_DRIVER_LOCAL from .env: %s", my_driver_env)
+                return os.path.abspath(my_driver_env)
+            try:
+                os.makedirs(my_driver_env, exist_ok=True)
+                logger.debug("Created MY_DRIVER_LOCAL from .env: %s", my_driver_env)
+                return os.path.abspath(my_driver_env)
+            except (OSError, PermissionError) as e:
+                logger.warning(
+                    "Failed to create MY_DRIVER_LOCAL from .env (%s): %s", my_driver_env, e
+                )
+    except Exception as e:
+        logger.warning("Failed to load .env file: %s", e)
 
     # 2순위: OS별 자동 탐색
     search_paths = []

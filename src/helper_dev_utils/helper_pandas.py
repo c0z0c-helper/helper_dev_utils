@@ -43,13 +43,6 @@ except ImportError:
     import helper_pandas_display as display
 
 try:
-    from dotenv import dotenv_values, load_dotenv
-
-    DOTENV_AVAILABLE = True
-except ImportError:
-    DOTENV_AVAILABLE = False
-
-try:
     import IPython
     from IPython.display import HTML
 
