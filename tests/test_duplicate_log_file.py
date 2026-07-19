@@ -10,16 +10,16 @@ if str(project_root) not in sys.path:
 
 import logging
 
-from src.helper_dev_utils import get_auto_logger
+from src.helper_dev_utils import get_logger
 from src.helper_dev_utils import set_pandas_extension
 
 log_dir = project_root / "logs"
 
-logger = get_auto_logger(level=logging.DEBUG, file=True, log_dir=log_dir)
+logger = get_logger(level=logging.DEBUG, enable_file_write=True, log_dir=log_dir)
 logger.debug("First log - Logger is set up.")
 
 # 같은 이름으로 재호출해도 핸들러가 중복 등록되지 않는지, 같은 로그 파일을 공유하는지 확인
-logger = get_auto_logger(level=logging.DEBUG, file=True, log_dir=log_dir)
+logger = get_logger(level=logging.DEBUG, enable_file_write=True, log_dir=log_dir)
 logger.debug("Second log - Testing duplicate prevention.")
 
 print(f"\n핸들러 개수: {len(logger.handlers)}")

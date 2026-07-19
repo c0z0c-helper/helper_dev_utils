@@ -45,7 +45,7 @@ def _auto_mount_drive(mount_point: str = "/content/drive", force_remount: bool =
         마운트 성공 여부
     """
     global _drive_mounted
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
 
     if not IS_COLAB:
         logger.debug("Not in Colab environment, skipping drive mount")
@@ -106,7 +106,7 @@ def google_authenticate(
     >>> creds, project = google_authenticate()
     >>> # PyDrive2, gspread 등과 함께 사용
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
 
     if not IS_COLAB:
         raise RuntimeError("google_authenticate() is only available in Google Colab environment")
@@ -153,7 +153,7 @@ def google_get_secret(
     >>> api_key = google_get_secret('OPENAI_API_KEY')
     >>> db_pass = google_get_secret('DB_PASSWORD', default='')
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
 
     # Colab 환경: userdata 우선
     if IS_COLAB:

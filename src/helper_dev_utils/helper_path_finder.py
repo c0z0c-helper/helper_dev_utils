@@ -40,7 +40,7 @@ def find_cache_root(app_name: str = ".cache") -> str:
     str
         발견되거나 생성된 캐시 경로, 또는 temp 폴더 경로.
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
 
     # 1순위: .env 파일의 MY_CACHE_LOCAL
     if DOTENV_AVAILABLE:
@@ -108,7 +108,7 @@ def find_google_drive() -> str:
     str
         발견되거나 생성된 GoogleDrive 경로, 또는 temp 폴더 경로.
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
 
     # 1순위: .env 파일의 MY_DRIVER_LOCAL
     if DOTENV_AVAILABLE:

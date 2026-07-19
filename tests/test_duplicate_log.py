@@ -10,14 +10,14 @@ if str(project_root) not in sys.path:
 
 import logging
 
-from src.helper_dev_utils import get_auto_logger
+from src.helper_dev_utils import get_logger
 from src.helper_dev_utils import set_pandas_extension
 
-logger = get_auto_logger(level=logging.DEBUG)
+logger = get_logger(level=logging.DEBUG)
 logger.debug("Logger is set up.")
 
 # 같은 이름으로 재호출해도 핸들러가 중복 등록되지 않는지 확인
-logger = get_auto_logger(level=logging.DEBUG)
+logger = get_logger(level=logging.DEBUG)
 logger.debug("Second call - should not duplicate output.")
 
 # 로거 목록 출력

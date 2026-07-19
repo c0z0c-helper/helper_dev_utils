@@ -27,9 +27,10 @@ from helper_dev_utils import (
     print_dir_tree,
     print_json_tree,
     print_dic_tree,
-    set_print_tree,
-    set_log_tree,
+    get_logger,
 )
+
+logger = get_logger()
 
 
 # =============================================================================
@@ -258,39 +259,24 @@ class TestTypeValidation:
 
 
 # =============================================================================
-# 테스트 클래스 6: set_print_tree / set_log_tree
+# 테스트 클래스 6: _print 인자로 print/log 함수 주입
 # =============================================================================
 
 
-class TestSetPrintMode:
-    """set_print_tree / set_log_tree 전환 테스트"""
+class TestPrintArgInjection:
+    """print_dir_tree / print_json_tree / print_dic_tree의 _print 인자 테스트"""
 
-    def test_set_print_tree(self, sample_dict, temp_dir_structure):
-        """set_print_tree 후 print로 출력 - 예외 없이 실행"""
-        set_print_tree()
-        print_dir_tree(temp_dir_structure)
-        print_json_tree(sample_dict)
-        print_dic_tree(sample_dict)
+    def test_print_dir_tree_with_logger(self, temp_dir_structure):
+        """_print=logger.info로 출력 - 예외 없이 실행"""
+        print_dir_tree(temp_dir_structure, _print=logger.info)
 
-    def test_set_log_tree(self, sample_dict, temp_dir_structure):
-        """set_log_tree 후 logger.info로 출력 - 예외 없이 실행"""
-        set_log_tree()
-        print_dir_tree(temp_dir_structure)
-        print_json_tree(sample_dict)
-        print_dic_tree(sample_dict)
+    def test_print_json_tree_with_logger(self, sample_dict):
+        """_print=logger.info로 출력 - 예외 없이 실행"""
+        print_json_tree(sample_dict, _print=logger.info)
 
-    def test_toggle_between_modes(self, sample_dict):
-        """print/log 모드 교차 전환 테스트"""
-        set_print_tree()
-        print_json_tree(sample_dict, max_depth=1)
-        set_log_tree()
-        print_json_tree(sample_dict, max_depth=1)
-        set_print_tree()
-        print_dic_tree(sample_dict, max_depth=1)
-
-    def teardown_method(self):
-        """테스트 후 기본값(print)으로 복원"""
-        set_print_tree()
+    def test_print_dic_tree_with_logger(self, sample_dict):
+        """_print=logger.info로 출력 - 예외 없이 실행"""
+        print_dic_tree(sample_dict, _print=logger.info)
 
 
 # =============================================================================

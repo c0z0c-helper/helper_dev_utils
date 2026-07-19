@@ -53,7 +53,7 @@ def google_driver(
     str
         현재 실행 환경에 맞는 드라이브 루트 경로
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
     global _google_driver_local, _google_driver_colab
 
     if google_driver_local is not None:
@@ -122,7 +122,7 @@ def google_driver_path(
     OSError, PermissionError
         디렉토리 생성 실패
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
     base_path = google_driver(
         google_driver_local=google_driver_local, google_driver_colab=google_driver_colab
     )
@@ -216,7 +216,7 @@ def empty_drive_trash(force: bool = False) -> dict:
     >>> result = empty_drive_trash(force=True)
     >>> print(result['message'])
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
 
     if not IS_COLAB:
         raise RuntimeError("empty_drive_trash() is only available in Google Colab environment")

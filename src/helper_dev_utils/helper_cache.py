@@ -44,7 +44,7 @@ def cache(cache_local: Optional[str] = None, cache_colab: Optional[str] = None) 
     str
         현재 실행 환경에 맞는 캐시 루트 경로
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
     global _cache_local, _cache_colab
 
     if cache_local is not None:
@@ -101,7 +101,7 @@ def cache_path(
     OSError, PermissionError
         디렉토리 생성 실패
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
     base_path = cache(cache_local=cache_local, cache_colab=cache_colab)
     base = Path(base_path).resolve(strict=False)
     logger.debug("cache_path base: %s", base)

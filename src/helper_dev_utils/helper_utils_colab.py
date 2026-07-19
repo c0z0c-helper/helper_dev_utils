@@ -90,7 +90,7 @@ def setup_matplotlib_korean_font() -> None:
 
     Windows, macOS, Linux/Colab 환경에서 사용 가능한 한글 폰트를 자동으로 감지합니다.
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
     font_name = _get_korean_font()
     if font_name:
         plt.rcParams["font.family"] = font_name
@@ -109,7 +109,7 @@ def _get_korean_font() -> Optional[str]:
     Optional[str]
         한글 폰트 이름 (없으면 None)
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
     system = platform.system()
 
     # 우선순위 폰트 목록
@@ -153,7 +153,7 @@ def display_markdown(text: str) -> Optional[Any]:
     Optional[Any]
         IPython.display 객체 (Jupyter 환경이 아니면 None)
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
 
     if IPYTHON_AVAILABLE:
         try:
@@ -185,7 +185,7 @@ def display_html(html: str) -> Optional[Any]:
     Optional[Any]
         IPython.display 객체 (Jupyter 환경이 아니면 None)
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
 
     if IPYTHON_AVAILABLE:
         try:
@@ -204,7 +204,7 @@ def display_html(html: str) -> Optional[Any]:
 
 
 if __name__ == "__main__":
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
 
     # 테스트: GoogleDrive 경로 탐지 및 출력
     logger.debug("=" * 60)

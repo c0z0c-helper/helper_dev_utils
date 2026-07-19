@@ -17,7 +17,7 @@ try:
 except ImportError:
     import helper_logger
 
-logger = helper_logger.get_auto_logger()
+logger = helper_logger.get_logger()
 
 try:
     from dotenv import load_dotenv, dotenv_values
@@ -58,35 +58,12 @@ except ImportError:
     TORCH_AVAILABLE = False
     torch = None
 
-_print = print  # 기본 _print 함수를 user_print로 저장
-# _print = logger.info  # logger의 info 메서드로 대체
-
-
-def set_log_tree() -> None:
-    """트리 출력 함수를 logger.info로 전환.
-
-    print_dir_tree, print_json_tree, print_dic_tree 등 트리 출력 함수가
-    내부적으로 사용하는 _print를 logger.info로 설정합니다.
-    """
-    global _print
-    _print = logger.info
-
-
-def set_print_tree() -> None:
-    """트리 출력 함수를 내장 print로 전환.
-
-    print_dir_tree, print_json_tree, print_dic_tree 등 트리 출력 함수가
-    내부적으로 사용하는 _print를 내장 print 함수로 설정합니다.
-    """
-    global _print
-    _print = print
-
-
 def print_dir_tree(
     root: str,
     indent: str = "",
     max_file_list: Optional[int] = None,
     max_dir_list: Optional[int] = None,
+    _print = print,
 ) -> None:
     """디렉토리 트리 구조를 계층형(tree) 형식으로 출력.
 
@@ -187,6 +164,7 @@ def print_json_tree(
     list_count: Optional[int] = None,
     print_value: bool = True,
     limit_value_text: int = 100,
+    _print = print,
 ) -> None:
     """JSON/딕셔너리/리스트를 파이프(|--) 스타일 트리 형태로 출력.
 
@@ -342,6 +320,7 @@ def print_dic_tree(
     list_count: Optional[int] = None,
     print_value: bool = True,
     limit_value_text: int = 100,
+    _print = print,
 ) -> None:
     """PyTorch Tensor/NumPy 배열/딕셔너리/리스트를 박스드로잉 스타일 트리로 출력.
 
@@ -639,19 +618,19 @@ if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
 
-    _print("=" * 60)
-    _print("MAIN TEST: helper_utils_print 데모")
-    _print("=" * 60)
+    print("=" * 60)
+    print("MAIN TEST: helper_utils_print 데모")
+    print("=" * 60)
 
     # 1. print_dir_tree 테스트 (상위 디렉토리 출력)
-    _print("[테스트 1] print_dir_tree - 부모 디렉토리 구조")
-    _print(f"경로: {parent_dir}\n")
+    print("[테스트 1] print_dir_tree - 부모 디렉토리 구조")
+    print(f"경로: {parent_dir}\n")
     print_dir_tree(parent_dir, max_file_list=3, max_dir_list=3)
 
     # 2. print_json_tree 테스트
-    _print("=" * 60)
-    _print("[테스트 2] print_json_tree - 샘플 딕셔너리 구조")
-    _print("=" * 60)
+    print("=" * 60)
+    print("[테스트 2] print_json_tree - 샘플 딕셔너리 구조")
+    print("=" * 60)
     sample_dict = {
         "name": "test_data",
         "version": 1.0,
@@ -664,6 +643,6 @@ if __name__ == "__main__":
     }
     print_json_tree(sample_dict, max_depth=3, list_count=1, print_value=True)
 
-    _print("=" * 60)
-    _print("MAIN TEST 완료")
-    _print("=" * 60)
+    print("=" * 60)
+    print("MAIN TEST 완료")
+    print("=" * 60)

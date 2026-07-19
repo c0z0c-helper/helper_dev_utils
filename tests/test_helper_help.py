@@ -194,7 +194,7 @@ class TestHelperSearch:
 
         helper_search(helper_dev_utils, "logger")
         captured = capsys.readouterr()
-        assert "get_logger" in captured.out or "get_auto_logger" in captured.out
+        assert "get_logger" in captured.out
 
     def test_returns_none(self, sample_module):
         """반환값이 None인지 확인"""

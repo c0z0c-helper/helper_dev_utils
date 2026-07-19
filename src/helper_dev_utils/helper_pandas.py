@@ -145,7 +145,7 @@ def main() -> None:
     - remove_head_att: 컬럼 설명 삭제
     - clear_head_att: 모든 컬럼 설명 초기화
     """
-    logger = helper_logger.get_auto_logger()
+    logger = helper_logger.get_logger()
     _print = logger.info  # logger의 info 메서드로 대체
 
     _print("=" * 80)

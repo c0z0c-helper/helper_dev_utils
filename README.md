@@ -50,27 +50,43 @@ pip install helper-dev-utils[all]
 같은 이름으로 재호출해도 핸들러가 중복 등록되지 않습니다.
 
 ```python
-from helper_dev_utils import get_auto_logger
+from helper_dev_utils import get_logger
 import logging
 
-# 자동으로 호출자 모듈명을 로거 이름으로 사용
-logger = get_auto_logger()
+# name을 생략하면 호출자 모듈명을 로거 이름으로 자동 사용
+logger = get_logger()
 logger.info("Hello World")
 logger.warning("경고 메시지")
 logger.error("에러 메시지")
 
 # 레벨/타임존 설정
-logger = get_auto_logger(level=logging.DEBUG, tz="UTC")
+logger = get_logger(level=logging.DEBUG, tz="UTC")
 logger.debug("디버그 메시지")
 
 # 파일 저장 활성화 (기본은 비활성화)
 # logs/YYYY/MM/DD/YYYYMMDD_HHMMSS.log 에 기록되며, 같은 프로세스의 로거들이 파일을 공유
-logger = get_auto_logger(file=True, log_dir="logs")
+logger = get_logger(enable_file_write=True, log_dir="logs")
 ```
 
+- `name`: 로거 이름. 생략(`None`)하면 `LOGGER_NAME` 환경 변수 → 호출자 모듈명 순으로 자동 결정. 이름 없는(anonymous) 로거가 필요하면 `name=""`을 명시적으로 전달.
+- `level`: 로그 레벨, int 또는 문자열 (기본: `INFO`)
 - `tz`: 타임스탬프에 적용할 타임존 (기본: `Asia/Seoul`)
-- `file`: 파일 저장 활성화 여부 (기본: `False`)
+- `enable_file_write`: 파일 저장 활성화 여부 (기본: `False`)
 - `log_dir`: 파일 저장 활성화 시 사용할 기준 디렉토리 (기본: `"logs"`)
+- `enable_file` / `enable_line`: 로그를 호출한 소스 파일명/라인 번호 표시 여부 (기본: `False`)
+
+`level`을 제외한 각 인자를 생략하면 아래 환경 변수(`.env` 포함, `python-dotenv` 설치 시)를 우선 사용합니다.
+명시적으로 전달한 인자는 항상 환경 변수보다 우선합니다.
+
+| 환경 변수 | 대응 인자 |
+| --- | --- |
+| `LOGGER_NAME` | `name` |
+| `LOGGER_LEVEL` | `level` |
+| `LOGGER_TZ` | `tz` |
+| `LOGGER_ENABLE_FILE_WRITE` | `enable_file_write` |
+| `LOGGER_LOG_DIR` | `log_dir` |
+| `LOGGER_ENABLE_FILE` | `enable_file` |
+| `LOGGER_ENABLE_LINE` | `enable_line` |
 
 ### 2. Pandas Extension (helper_pandas)
 
@@ -343,3 +359,15 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
 ### 0.6.1
 - PEP 561 py.typed 적용
+
+### 0.6.2
+- print_xxx_tree 의 출력 설정 가능
+
+### 0.6.3
+- print_xxx_tree 오류 버그 수정
+
+### 0.6.4
+- get_aoto_logger (제거)
+- get_logger 통합 .env 적용
+
+
