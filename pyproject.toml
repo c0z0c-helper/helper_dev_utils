@@ -44,6 +44,7 @@ dependencies = [
     "build>=1.2.2.post1",
     "dotenv>=0.9.9",
     "pytest>=8.3.5",
+    "twine>=6.1.0",
 ]
 
 [project.optional-dependencies]
