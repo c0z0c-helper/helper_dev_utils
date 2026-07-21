@@ -374,3 +374,6 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 - get_logger()가 더 이상 load_dotenv를 자동 호출하지 않음
 — .env 로딩은 호출자(외부 코드) 책임으로 이관. 패키지 레벨 DOTENV_AVAILABLE export도 제거됨.
 
+### 0.6.5
+- 
+

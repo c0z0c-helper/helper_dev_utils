@@ -128,7 +128,7 @@ def _resolve_enable_flags(
     return bool(file_value), bool(line_value)
 
 def get_logger(
-    name: Optional[str] = None,
+    name: Optional[Union[int, str]] = None,
     level: Optional[Union[int, str]] = None,
     tz: Optional[Union[str, ZoneInfo]] = None,
     enable_file: Optional[bool] = None,
@@ -176,9 +176,19 @@ def get_logger(
         >>> logger = get_logger(name="")  # 이름 없는(anonymous) 로거
         >>> logger.info("hi")  # ... app (main.py:10) - hi
     """
-
     if name is None:
         name = _env_str("LOGGER_NAME") or ""
+        
+    if isinstance(name, int):
+        level = name
+        name = None
+
+    if isinstance(name, str):
+        for n in logging._nameToLevel:
+            if name.upper() == n:
+                level = logging._nameToLevel[n]
+                name = None
+                break
 
     if level is None:
         level = _env_str("LOGGER_LEVEL") or logging.INFO
@@ -229,38 +239,37 @@ if __name__ == "__main__":
     except ImportError:
         pass
     
-    logger = get_logger("demo")
-    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
-    logger.info("info message")
-    logger.warning("warning message")
-    logger.error("error message")
-
-    logger = get_logger()
-    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
-    logger.info("info message")
-    logger.warning("warning message")
-    logger.error("error message")
-
-    logger = get_logger(enable_file=True)
-    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
-    logger.info("info message")
-    logger.warning("warning message")
-    logger.error("error message")
-
-    logger = get_logger(enable_line=True)
-    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
-    logger.info("info message")
-    logger.warning("warning message")
-    logger.error("error message")
-
-    logger = get_logger(enable_file=True, enable_line=True)
-    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
-    logger.info("info message")
-    logger.warning("warning message")
-    logger.error("error message")
-
     logger = get_logger("daemo", enable_file=True, enable_line=True)
     logger.debug("debug message (숨김, 기본 레벨은 INFO)")
     logger.info("info message")
     logger.warning("warning message")
     logger.error("error message")
+    
+    print()
+    logger = get_logger(logging.DEBUG)
+    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
+    logger.info("info message")
+    logger.warning("warning message")
+    logger.error("error message")
+
+    print()
+    logger = get_logger(logging.INFO)
+    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
+    logger.info("info message")
+    logger.warning("warning message")
+    logger.error("error message")
+
+    print()
+    logger = get_logger("DEBUG")
+    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
+    logger.info("info message")
+    logger.warning("warning message")
+    logger.error("error message")
+
+    print()
+    logger = get_logger("INFO")
+    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
+    logger.info("info message")
+    logger.warning("warning message")
+    logger.error("error message")
+    
