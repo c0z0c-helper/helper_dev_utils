@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "helper-dev-utils"
-version = "0.6.6"
+version = "0.6.7"
 description = "Python 유틸리티 모음 라이브러리: 로깅, Pandas 확장, 출력, 경로 관리"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -37,14 +37,10 @@ dependencies = [
     "numpy>=1.16.0",
     "pandas>=1.0.0",
     "backports.zoneinfo>=0.2.1; python_version < '3.9'",
-    "ipython>=8.12.3",
+    "ipython>=7.0.0",
     "google>=3.0.0",
     "torch>=2.5.1",
-    "pip>=25.0.1",
-    "build>=1.2.2.post1",
     "dotenv>=0.9.9",
-    "pytest>=8.3.5",
-    "twine>=6.1.0",
 ]
 
 [project.optional-dependencies]
@@ -99,4 +95,6 @@ target-version = "py38"
 dev = [
     "ipykernel>=6.29.5",
     "wheel>=0.45.1",
+    "build>=1.2.2.post1",
+    "twine>=6.1.0",
 ]

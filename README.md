@@ -12,6 +12,8 @@ Python 개발 시 자주 사용하는 유틸리티 모음 라이브러리
 - **helper_pandas**: Pandas 확장 기능 (한글 컬럼 설명, 데이터 출력, HTML/콘솔 지원)
 - **helper_utils_print**: 출력 유틸리티 (디렉토리/JSON/딕셔너리 트리 구조 출력)
 - **helper_utils_colab**: 경로 관리 유틸리티 (로컬/Colab 환경 경로 자동 탐색)
+- **helper_colab_auth**: Google Colab 인증 유틸리티 (사용자 인증, Secrets 조회, Drive 마운트 상태 확인)
+- **helper_google_driver**: Google Drive 경로 관리 유틸리티 (경로 조회/결합, 휴지통 비우기)
 - **helper_help**: 도움말 유틸리티 (함수/메서드 시그니처·docstring 출력, 모듈 함수 검색)
 
 ## 설치
@@ -233,6 +235,109 @@ helper_search(pd)
 |------|------|
 | `helper_help(fdn)` | 함수/메서드의 시그니처와 docstring 출력 |
 | `helper_search(lbn, query=None)` | 모듈 내 함수/클래스 중 이름에 query가 포함된 항목 출력. query 생략 시 전체 목록 |
+
+### 6. Google Colab 인증 및 Drive 관리 (helper_colab_auth / helper_google_driver)
+
+Google Colab 환경에서 사용자 인증, Secrets 조회, Drive 마운트 상태 확인, 경로 관리, 휴지통 비우기를 지원합니다.
+Colab이 아닌 환경에서는 `google_authenticate()`/`empty_drive_trash()`는 `RuntimeError`를 발생시키고,
+`google_is_drive_mounted()`는 `False`를 반환합니다.
+
+```python
+from helper_dev_utils import (
+    google_authenticate,
+    google_get_secret,
+    google_is_drive_mounted,
+    google_driver,
+    google_driver_path,
+    empty_drive_trash,
+)
+
+# Google 서비스 인증 (Colab 전용)
+creds, project_id = google_authenticate()
+# PyDrive2, gspread, googleapiclient 등 인증이 필요한 라이브러리와 함께 사용
+
+# Colab Secrets(등록된 값)에서 비밀값 조회, 없으면 환경변수로 폴백
+api_key = google_get_secret('OPENAI_API_KEY')
+db_pass = google_get_secret('DB_PASSWORD', default='')
+
+# Drive 마운트 상태 확인
+if google_is_drive_mounted():
+    print("Drive가 마운트되어 있습니다")
+
+# Drive 루트 경로 가져오기 (Colab에서는 자동 마운트 후 경로 반환)
+drive_path = google_driver()
+print(drive_path)  # /content/drive/MyDrive (Colab) 또는 로컬 경로
+
+# 루트 하위 경로 결합 (기본적으로 디렉토리를 생성하고 존재를 검증)
+data_path = google_driver_path('datasets', 'images')
+print(data_path)
+
+# Drive 휴지통 비우기 (Colab 전용, google-api-python-client 필요)
+result = empty_drive_trash(force=True)
+print(result['message'])
+```
+
+| 함수 | 설명 |
+|------|------|
+| `google_authenticate(scopes=None, force=False)` | Colab 사용자 인증 수행, `(credentials, project_id)` 반환 |
+| `google_get_secret(key, default=None, fallback_env=True)` | Colab Secrets에서 값 조회, 없으면 환경변수로 폴백 |
+| `google_is_drive_mounted(mount_point='/content/drive')` | Drive 마운트 여부 반환 |
+| `google_driver(google_driver_local=None, google_driver_colab=None, auto_mount=True)` | 환경에 맞는 Drive 루트 경로 반환 (Colab은 자동 마운트) |
+| `google_driver_path(*subpaths, create=True, validate=True, allow_escape=False, ...)` | `google_driver()` 루트에 하위 경로를 결합한 절대 경로 반환 |
+| `empty_drive_trash(force=False)` | Drive 휴지통 비우기. `force=False`면 실제로 비우지 않고 확인 메시지만 반환 |
+
+> `empty_drive_trash`는 `google-api-python-client`가 필요합니다: `pip install helper-dev-utils[google]`
+
+#### 로컬/Colab 루트 경로 통일 (`google_driver_local` / `google_driver_colab`)
+
+같은 노트북·스크립트를 로컬 PC와 Colab에서 코드 수정 없이 그대로 돌리기 위한 경로 추상화입니다.
+"로컬에서는 이 폴더, Colab에서는 이 폴더를 Drive 루트로 써라"를 한 번 등록해두면,
+이후 `google_driver_path()`는 실행 환경을 자동으로 판별해 그에 맞는 루트 밑에 경로를 만들어줍니다.
+
+- `google_driver_local`: 로컬 환경에서 사용할 루트 (예: Google Drive 데스크톱 앱 동기화 폴더). 생략 시 `helper_path_finder.find_google_drive()`가 자동 탐색한 경로가 기본값으로 사용됩니다.
+- `google_driver_colab`: Colab 환경에서 사용할 루트 (기본값 `/content/drive/MyDrive`).
+- 두 값 모두 `google_driver()`/`google_driver_path()` 호출 시 한 번만 넘기면 모듈에 캐시되어, 이후 인자 없이 호출해도 계속 재사용됩니다.
+
+```python
+from helper_dev_utils import google_driver, google_driver_path
+
+# 루트를 한 번 등록 (프로젝트 시작 시 1회만 호출하면 됨)
+google_driver(
+    google_driver_local="D:/my_drive_sync/MyDrive",   # 로컬 PC의 Drive 동기화 폴더
+    google_driver_colab="/content/drive/MyDrive",      # Colab 마운트 경로 (기본값과 동일해도 명시 가능)
+)
+
+# 이후로는 환경을 신경 쓰지 않고 상대 경로만 지정
+# 로컬: D:/my_drive_sync/MyDrive/project/dataset/train.csv
+# Colab: /content/drive/MyDrive/project/dataset/train.csv
+train_csv = google_driver_path("project", "dataset", "train.csv", create=False)
+
+# 여러 곳에서 동일한 루트를 계속 사용 (재등록 불필요)
+model_dir = google_driver_path("project", "models")       # 디렉토리 자동 생성
+log_dir = google_driver_path("project", "logs")
+```
+
+즉 `google_driver_local`/`google_driver_colab`으로 "환경별 루트"를 등록하고,
+`google_driver_path`는 그 루트를 기준으로 하위 경로를 조립·생성·검증해
+로컬/Colab 어디서 실행되든 동일한 상대 경로 인터페이스를 제공합니다.
+
+#### 자동 마운트 제어 (`auto_mount`)
+
+`google_driver_local`/`google_driver_colab`이 "어떤 경로를 쓸지" 등록하는 인자라면,
+`auto_mount`는 그와 별개로 **Colab에서 Drive를 지금 실제로 마운트할지**를 결정하는 인자입니다 (기본값 `True`).
+
+- `auto_mount=True` (기본): Colab 환경에서 `google_driver()`/`google_driver_path()`를 호출하는 순간 자동으로 `drive.mount()`를 시도합니다. 이미 마운트돼 있으면 건너뛰고, 아니면 그 자리에서 Colab 인증 팝업이 뜹니다.
+- `auto_mount=False`: 마운트를 시도하지 않고 등록된 경로 문자열만 반환합니다. 아직 파일 접근이 필요 없는 시점(예: 초기 설정 단계에서 경로 문자열만 미리 구성)에 마운트 팝업이 뜨는 걸 피하고 싶을 때 사용합니다.
+
+```python
+# 경로 문자열만 미리 구성 — 마운트 팝업을 띄우지 않음
+path = google_driver(auto_mount=False)
+
+# ... 다른 초기화 작업 ...
+
+# 실제로 파일이 필요한 시점에 호출하면 그때 마운트됨 (auto_mount 기본값 True)
+train_csv = google_driver_path("project", "dataset", "train.csv")
+```
 
 ## 의존성
 
