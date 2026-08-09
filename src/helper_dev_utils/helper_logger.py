@@ -8,8 +8,11 @@ helper_logger 모듈
 - 같은 이름으로 재호출해도 핸들러가 중복 등록되지 않는다.
 - 파일 저장은 기본적으로 비활성화되어 있으며, 활성화 시 프로세스 시작 시점을 기준으로
   {log_dir}/YYYY/MM/DD/YYYYMMDD_HHMMSS.log 경로에 기록된다 (같은 프로세스 내 로거들이 파일을 공유).
-- enable_file/enable_line 옵션을 켜면 로그를 호출한 소스 파일명/라인 번호를 함께 출력한다
-  (기본값은 둘 다 True이며, 한쪽만 명시하면 나머지는 False로 취급되어 서로 독립적으로 동작한다).
+- enable_file/enable_fnc/enable_line 옵션을 켜면 로그를 호출한 소스 파일명/함수명/라인 번호를
+  함께 출력한다 (기본값은 셋 다 True이며, 하나라도 명시하면 나머지는 False로 취급되어
+  명시한 조합대로 표시할 항목이 결정된다). 출력 형식은 "(파일명::함수명:라인번호)"처럼
+  활성화된 항목만 연결되며, 파일명-함수명 사이는 "::"(콜론 2개), 그 외 조합은 ":"(콜론 1개)로
+  구분한다. 하나만 활성화된 경우에는 구분자 없이 "(항목)" 형태로 출력된다.
 
 사용 예:
 >>> logger = get_logger("app")
@@ -72,19 +75,33 @@ def _get_log_file_path(log_dir: Union[str, Path], tz: Union[str, ZoneInfo]) -> P
     return _log_file_path
 
 
-def _build_fmt(name: str, enable_file: bool, enable_line: bool) -> str:
-    """name 유무 및 enable_file/enable_line 옵션에 따라 포맷 문자열을 구성한다.
+def _build_fmt(name: Optional[str], enable_file: bool, enable_fnc: bool, enable_line: bool) -> str:
+    """name 유무 및 enable_file/enable_fnc/enable_line 옵션에 따라 포맷 문자열을 구성한다.
 
     name="" 인 경우 logging.getLogger("")가 root 로거(logger.name == "root")를
     반환하므로 %(name)s를 그대로 쓰면 "root"가 찍힌다. 이를 피하기 위해 name이
     비어 있으면 name 표시 자체를 포맷에서 제외한다.
+
+    활성화된 항목(파일명/함수명/라인번호)만 "(항목:항목) - " 형태로 연결한다. 파일명과
+    함수명 사이는 "::"(콜론 2개), 그 외 조합(함수명-라인번호, 파일명-라인번호)은 ":"
+    (콜론 1개)로 구분한다 (예: "(a.py::fn:10)", "(a.py:10)", "(fn:10)"). 활성화된
+    항목이 하나뿐이면 구분자 없이 "(항목) - "로 출력하고, 하나도 없으면 위치 정보 자체를
+    생략한다.
     """
-    if enable_file and enable_line:
-        location = "(%(filename)s:%(lineno)d) - "
-    elif enable_file:
-        location = "(%(filename)s) - "
-    elif enable_line:
-        location = "(:%(lineno)d) - "
+    parts = []
+    if enable_file:
+        parts.append(("file", "%(filename)s"))
+    if enable_fnc:
+        parts.append(("fnc", "%(funcName)s"))
+    if enable_line:
+        parts.append(("line", "%(lineno)d"))
+
+    if parts:
+        joined = parts[0][1]
+        for (prev_key, _), (key, template) in zip(parts, parts[1:]):
+            sep = "::" if prev_key == "file" and key == "fnc" else ":"
+            joined += sep + template
+        location = f"({joined}) - "
     else:
         location = ""
     name_part = "%(name)s" if name else ""
@@ -116,16 +133,17 @@ def _env_str(env_key: str) -> Optional[str]:
     return value if value else None
 
 def _resolve_enable_flags(
-    enable_file: Optional[bool], enable_line: Optional[bool]
-) -> tuple[bool, bool]:
-    
+    enable_file: Optional[bool], enable_fnc: Optional[bool], enable_line: Optional[bool]
+) -> tuple[bool, bool, bool]:
+
     file_value = enable_file if enable_file is not None else _env_bool_optional("LOGGER_ENABLE_FILE")
+    fnc_value = enable_fnc if enable_fnc is not None else _env_bool_optional("LOGGER_ENABLE_FNC")
     line_value = enable_line if enable_line is not None else _env_bool_optional("LOGGER_ENABLE_LINE")
 
-    if file_value is None and line_value is None:
-        return True, True
+    if file_value is None and fnc_value is None and line_value is None:
+        return True, True, True
 
-    return bool(file_value), bool(line_value)
+    return bool(file_value), bool(fnc_value), bool(line_value)
 
 def get_logger(
     name: Optional[Union[int, str]] = None,
@@ -133,6 +151,7 @@ def get_logger(
     tz: Optional[Union[str, ZoneInfo]] = None,
     enable_file: Optional[bool] = None,
     enable_line: Optional[bool] = None,
+    enable_fnc: Optional[bool] = None,
     enable_file_write: Optional[bool] = None,
     log_dir: Optional[Union[str, Path]] = None,
 ) -> logging.Logger:
@@ -141,16 +160,20 @@ def get_logger(
 
     각 인자를 생략하면(None) 다음 우선순위로 값이 결정된다.
         1. 환경 변수 (.env 포함, python-dotenv 설치 시): LOGGER_NAME, LOGGER_LEVEL, LOGGER_TZ,
-           LOGGER_ENABLE_FILE_WRITE, LOGGER_LOG_DIR, LOGGER_ENABLE_FILE, LOGGER_ENABLE_LINE
+           LOGGER_ENABLE_FILE_WRITE, LOGGER_LOG_DIR, LOGGER_ENABLE_FILE, LOGGER_ENABLE_FNC,
+           LOGGER_ENABLE_LINE
         2. 그래도 없으면 하드코딩된 기본값
-           (name="", level=INFO, tz=Asia/Seoul, enable_file=True, enable_line=True,
+           (name="", level=INFO, tz=Asia/Seoul, enable_file=True, enable_fnc=True, enable_line=True,
             enable_file_write=False, log_dir="logs")
 
     name을 생략하면 빈 이름(anonymous/root) 로거가 반환된다.
 
-    enable_file/enable_line은 파라미터나 환경 변수로 둘 다 미지정인 경우에만
-    함께 True가 기본값이 된다. 한쪽만 명시하면 나머지는 False로 취급되어
-    서로 독립적으로 동작한다 (예: enable_line=True만 주면 파일명 없이 라인 번호만 표시).
+    enable_file/enable_fnc/enable_line은 파라미터나 환경 변수로 셋 다 미지정인 경우에만
+    함께 True가 기본값이 된다. 하나라도 명시하면 나머지는 False로 취급되어,
+    명시한 조합대로 표시할 항목이 결정된다 (예: enable_line=True만 주면 파일명/함수명 없이
+    라인 번호만 표시). 활성화된 항목은 파일명:함수명:라인번호 순으로 "(...)" 안에 연결되어
+    출력되며, 파일명-함수명 사이는 "::"(콜론 2개), 그 외 조합은 ":"(콜론 1개)로 구분한다.
+    활성화된 항목이 하나뿐이면 구분자 없이 출력된다.
 
     Args:
         name: 로거 이름. None이면 환경 변수 → 빈 이름("") 순으로 결정된다.
@@ -162,6 +185,7 @@ def get_logger(
         log_dir: 파일 저장 활성화 시 사용할 기준 디렉토리
         enable_file: 로그를 호출한 소스 파일명 표시 여부
             enable_file_write(로그 파일 저장)과는 별개 옵션이다.
+        enable_fnc: 로그를 호출한 함수명 표시 여부
         enable_line: 로그를 호출한 소스 라인 번호 표시 여부
 
     Returns:
@@ -172,9 +196,9 @@ def get_logger(
         >>> logger = get_logger("app", level=logging.DEBUG)
         >>> logger = get_logger("app", enable_file_write=True)
         >>> logger = get_logger("app", enable_file_write=True, log_dir="var/logs")
-        >>> logger = get_logger("app", enable_file=True, enable_line=True)
+        >>> logger = get_logger("app", enable_file=True, enable_fnc=True, enable_line=True)
         >>> logger = get_logger(name="")  # 이름 없는(anonymous) 로거
-        >>> logger.info("hi")  # ... app (main.py:10) - hi
+        >>> logger.info("hi")  # ... app (main.py::run:10) - hi
     """
     if name is None:
         name = _env_str("LOGGER_NAME") or ""
@@ -196,7 +220,7 @@ def get_logger(
     if tz is None:
         tz = _env_str("LOGGER_TZ") or DEFAULT_TZ
     
-    enable_file, enable_line = _resolve_enable_flags(enable_file, enable_line)
+    enable_file, enable_fnc, enable_line = _resolve_enable_flags(enable_file, enable_fnc, enable_line)
 
     if enable_file_write is None:
         enable_file_write = _env_bool("LOGGER_ENABLE_FILE_WRITE") or False
@@ -209,7 +233,7 @@ def get_logger(
     else:
         logging_level = level
 
-    formatter = LogFormatter(fmt=_build_fmt(name, enable_file, enable_line), tz=tz)
+    formatter = LogFormatter(fmt=_build_fmt(name, enable_file, enable_fnc, enable_line), tz=tz)
 
     logger = logging.getLogger(name)
     logger.setLevel(logging_level)
@@ -228,6 +252,7 @@ def get_logger(
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
+
     return logger
 
 
@@ -238,38 +263,83 @@ if __name__ == "__main__":
         load_dotenv(override=True)  # .env 파일이 있으면 환경 변수 로드
     except ImportError:
         pass
-    
-    logger = get_logger("daemo", enable_file=True, enable_line=True)
-    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
-    logger.info("info message")
-    logger.warning("warning message")
-    logger.error("error message")
-    
-    print()
-    logger = get_logger(logging.DEBUG)
-    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
-    logger.info("info message")
-    logger.warning("warning message")
-    logger.error("error message")
+
+    def test_enable_file_enable_line():
+        logger = get_logger("daemo", enable_file=True, enable_line=True)
+        logger.debug("debug message (숨김, 기본 레벨은 INFO)")
+        logger.info("info message")
+        logger.warning("warning message")
+        logger.error("error message")
+    test_enable_file_enable_line()
 
     print()
-    logger = get_logger(logging.INFO)
-    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
-    logger.info("info message")
-    logger.warning("warning message")
-    logger.error("error message")
+
+    def test_enable_file_only():
+        logger = get_logger("daemo", enable_file=True, enable_line=False)
+        logger.debug("debug message (숨김, 기본 레벨은 INFO)")
+        logger.info("info message")
+        logger.warning("warning message")
+        logger.error("error message")
+    test_enable_file_only() 
 
     print()
-    logger = get_logger("DEBUG")
-    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
-    logger.info("info message")
-    logger.warning("warning message")
-    logger.error("error message")
-
-    print()
-    logger = get_logger("INFO")
-    logger.debug("debug message (숨김, 기본 레벨은 INFO)")
-    logger.info("info message")
-    logger.warning("warning message")
-    logger.error("error message")
     
+    def test_enable_line_only():
+        logger = get_logger("daemo", enable_file=False, enable_line=True)
+        logger.debug("debug message (숨김, 기본 레벨은 INFO)")
+        logger.info("info message")
+        logger.warning("warning message")
+        logger.error("error message")
+    test_enable_line_only()
+
+    print()
+
+    def test_enable_fnc_only():
+        logger = get_logger("daemo", enable_file=False, enable_fnc=True, enable_line=False)
+        logger.debug("debug message (숨김, 기본 레벨은 INFO)")
+        logger.info("info message")
+        logger.warning("warning message")
+        logger.error("error message")
+    test_enable_fnc_only()
+
+    print()
+
+    def test_enable_file_fnc_line():
+        logger = get_logger("daemo", enable_file=True, enable_fnc=True, enable_line=True)
+        logger.debug("debug message (숨김, 기본 레벨은 INFO)")
+        logger.info("info message")
+        logger.warning("warning message")
+        logger.error("error message")
+    test_enable_file_fnc_line()
+
+    print()
+
+    def test_enable_file_line_none():
+        logger = get_logger("daemo", enable_file=None, enable_line=None)
+        logger.debug("debug message (숨김, 기본 레벨은 INFO)")
+        logger.info("info message")
+        logger.warning("warning message")
+        logger.error("error message")
+    test_enable_file_line_none()
+    
+    def test_enable_file_line_env():
+        os.environ["LOGGER_ENABLE_FILE"] = "1"
+        os.environ["LOGGER_ENABLE_LINE"] = "0"
+        logger = get_logger("daemo", enable_file=None, enable_line=None)
+        logger.debug("debug message (숨김, 기본 레벨은 INFO)")
+        logger.info("info message")
+        logger.warning("warning message")
+        logger.error("error message")
+    test_enable_file_line_env()
+
+    print()
+    
+    def test_enable_file_line_env_2():
+        os.environ["LOGGER_ENABLE_FILE"] = "1"
+        os.environ["LOGGER_ENABLE_LINE"] = "0"
+        logger = get_logger("daemo", enable_file=None, enable_line=None)
+        logger.debug("debug message (숨김, 기본 레벨은 INFO)")
+        logger.info("info message")
+        logger.warning("warning message")
+        logger.error("error message")
+    test_enable_file_line_env_2()

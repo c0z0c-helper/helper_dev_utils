@@ -75,7 +75,11 @@ logger = get_logger(enable_file_write=True, log_dir="logs")
 - `tz`: 타임스탬프에 적용할 타임존 (기본: `Asia/Seoul`)
 - `enable_file_write`: 파일 저장 활성화 여부 (기본: `False`)
 - `log_dir`: 파일 저장 활성화 시 사용할 기준 디렉토리 (기본: `"logs"`)
-- `enable_file` / `enable_line`: 로그를 호출한 소스 파일명/라인 번호 표시 여부 (기본: `False`)
+- `enable_file` / `enable_fnc` / `enable_line`: 로그를 호출한 소스 파일명/함수명/라인 번호 표시 여부
+  (셋 다 미지정 시 기본: `True`, 하나라도 명시하면 나머지는 `False`로 취급).
+  활성화된 항목은 파일명:함수명:라인번호 순으로 `(...)` 안에 연결되어 출력되며, 파일명-함수명
+  사이는 `::`(콜론 2개), 그 외 조합은 `:`(콜론 1개)로 구분한다. 활성화된 항목이 하나뿐이면
+  구분자 없이 출력된다 (예: `(main.py::run:10)`, `(main.py:10)`, `(run)`, `(10)`).
 
 `level`을 제외한 각 인자를 생략하면 아래 환경 변수(`.env` 포함, `python-dotenv` 설치 시)를 우선 사용합니다.
 명시적으로 전달한 인자는 항상 환경 변수보다 우선합니다.
@@ -88,6 +92,7 @@ logger = get_logger(enable_file_write=True, log_dir="logs")
 | `LOGGER_ENABLE_FILE_WRITE` | `enable_file_write` |
 | `LOGGER_LOG_DIR` | `log_dir` |
 | `LOGGER_ENABLE_FILE` | `enable_file` |
+| `LOGGER_ENABLE_FNC` | `enable_fnc` |
 | `LOGGER_ENABLE_LINE` | `enable_line` |
 
 ### 2. Pandas Extension (helper_pandas)
@@ -429,30 +434,34 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
 ## 버전 히스토리
 
-### 0.5.7 이하
+### 0.7.0
+- `helper_logger`: `get_logger`에 `enable_fnc` 옵션 추가 — 로그를 호출한 함수명을 출력할 수 있다.
+  `enable_file`/`enable_fnc`/`enable_line` 중 활성화된 항목만 `(파일명::함수명:라인번호)` 형태로
+  연결되어 출력되며(파일명-함수명 사이는 `::`, 그 외 조합은 `:`), 하나만 활성화되면 구분자 없이 출력된다.
 
-- `helper_logger`: 로깅 유틸리티 초기 구현 및 환경변수 기반 설정 지원
-- `helper_pandas`: Pandas 확장 기능 (한글 컬럼 설명, `head_att`, `show` 등)
-- `helper_utils_print`: `print_dir_tree`, `print_json_tree`, `print_dic_tree` 구현
-- `helper_utils_colab`: 로컬/Colab 환경 경로 자동 탐색 구현
+### 0.6.7
+- 코랩 설치 세션 리셋 수정 (2026-08-06)
 
-### 0.5.8
+### 0.6.6
+- `helper_logger`: `get_logger`의 `name` 자리에 로그 레벨(`int` 또는 `"DEBUG"`/`"INFO"` 등 문자열)을
+  전달하면 자동으로 `level`로 인식하도록 개선
 
-- `helper_cache`: 캐시 유틸리티 모듈 추가
-- `helper_colab_auth`: Google 인증 관련 함수 추가 (`google_authenticate`, `google_get_secret`, `google_is_drive_mounted`)
+### 0.6.5
+- get_logger()가 더 이상 load_dotenv를 자동 호출하지 않음
+— .env 로딩은 호출자(외부 코드) 책임으로 이관. 패키지 레벨 DOTENV_AVAILABLE export도 제거됨.
 
-### 0.5.9
+### 0.6.4
+- get_aoto_logger (제거)
+- get_logger 통합 .env 적용
 
-- `helper_help`: 함수/메서드 시그니처 및 docstring 출력 기능 추가
-- `helper_search`: 모듈 내 함수·클래스 이름 기반 검색 기능 추가
+### 0.6.3
+- print_xxx_tree 오류 버그 수정
 
-### 0.5.10
+### 0.6.2
+- print_xxx_tree 의 출력 설정 가능
 
-- `helper_utils_print`: `set_print_tree()` / `set_log_tree()` 함수 추가 - 트리 출력 시 `print` 또는 `logger.info` 전환 가능
-- `helper_utils_print`: `print_json_tree`, `print_dic_tree`의 `max_depth`, `list_count` 기본값을 `None`(무한대)으로 변경
-- `__init__.py`: `set_print_tree`, `set_log_tree` 패키지 레벨 노출 추가
-- `tests`: `test_helper_utils_colab.py` 실제 API(`google_driver`, `google_driver_path`, `cache`, `cache_path`)에 맞게 수정
-- `tests`: `test_helper_utils_print.py`에 `set_print_tree`/`set_log_tree` 전환 및 `None` 기본값 테스트 추가 (총 31개)
+### 0.6.1
+- PEP 561 py.typed 적용
 
 ### 0.6.0
 
@@ -462,23 +471,29 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 - `__init__.py`: `sample_logger_env`, `reconfigure_logger` 패키지 레벨 노출 제거
 - `tests`: `conftest.py`에 pytest 훅 추가 — 테스트 실행 시 `tests/report/YYYYMMDD_HHMMSS.md`에 결과 표 자동 생성
 
-### 0.6.1
-- PEP 561 py.typed 적용
+### 0.5.10
 
-### 0.6.2
-- print_xxx_tree 의 출력 설정 가능
+- `helper_utils_print`: `set_print_tree()` / `set_log_tree()` 함수 추가 - 트리 출력 시 `print` 또는 `logger.info` 전환 가능
+- `helper_utils_print`: `print_json_tree`, `print_dic_tree`의 `max_depth`, `list_count` 기본값을 `None`(무한대)으로 변경
+- `__init__.py`: `set_print_tree`, `set_log_tree` 패키지 레벨 노출 추가
+- `tests`: `test_helper_utils_colab.py` 실제 API(`google_driver`, `google_driver_path`, `cache`, `cache_path`)에 맞게 수정
+- `tests`: `test_helper_utils_print.py`에 `set_print_tree`/`set_log_tree` 전환 및 `None` 기본값 테스트 추가 (총 31개)
 
-### 0.6.3
-- print_xxx_tree 오류 버그 수정
+### 0.5.9
 
-### 0.6.4
-- get_aoto_logger (제거)
-- get_logger 통합 .env 적용
+- `helper_help`: 함수/메서드 시그니처 및 docstring 출력 기능 추가
+- `helper_search`: 모듈 내 함수·클래스 이름 기반 검색 기능 추가
 
-### 0.6.5
-- get_logger()가 더 이상 load_dotenv를 자동 호출하지 않음
-— .env 로딩은 호출자(외부 코드) 책임으로 이관. 패키지 레벨 DOTENV_AVAILABLE export도 제거됨.
+### 0.5.8
 
-### 0.6.5
-- 
+- `helper_cache`: 캐시 유틸리티 모듈 추가
+- `helper_colab_auth`: Google 인증 관련 함수 추가 (`google_authenticate`, `google_get_secret`, `google_is_drive_mounted`)
+
+### 0.5.7 이하
+
+- `helper_logger`: 로깅 유틸리티 초기 구현 및 환경변수 기반 설정 지원
+- `helper_pandas`: Pandas 확장 기능 (한글 컬럼 설명, `head_att`, `show` 등)
+- `helper_utils_print`: `print_dir_tree`, `print_json_tree`, `print_dic_tree` 구현
+- `helper_utils_colab`: 로컬/Colab 환경 경로 자동 탐색 구현
+
 

@@ -5,6 +5,7 @@ helper_logger 모듈 pytest 테스트
 """
 
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -203,7 +204,7 @@ class TestGetLogger:
         logger = get_logger("test_enable_line", enable_line=True)
         logger.info("hello")
         captured = capsys.readouterr()
-        assert "(:" in captured.err
+        assert re.search(r"\(\d+\)", captured.err)
         assert "hello" in captured.err
 
     def test_enable_file_and_line_together(self, capsys):
@@ -217,6 +218,25 @@ class TestGetLogger:
         logger.info("hello")
         captured = capsys.readouterr()
         assert "test_helper_logger.py:" in captured.err
+
+    def test_enable_fnc_shows_caller_funcname(self, capsys):
+        logger = get_logger("test_enable_fnc", enable_file=False, enable_fnc=True, enable_line=False)
+        logger.info("hello")
+        captured = capsys.readouterr()
+        assert "(test_enable_fnc_shows_caller_funcname)" in captured.err
+        assert "hello" in captured.err
+
+    def test_enable_file_fnc_line_together(self, capsys):
+        logger = get_logger("test_enable_all", enable_file=True, enable_fnc=True, enable_line=True)
+        logger.info("hello")
+        captured = capsys.readouterr()
+        assert "test_helper_logger.py::test_enable_file_fnc_line_together:" in captured.err
+
+    def test_enable_fnc_enabled_by_default(self, capsys):
+        logger = get_logger("test_enable_fnc_default")
+        logger.info("hello")
+        captured = capsys.readouterr()
+        assert "test_enable_fnc_enabled_by_default" in captured.err
 
     def test_empty_name_omits_name_from_output(self, capsys):
         logger = get_logger(name="")
@@ -270,7 +290,7 @@ class TestGetLoggerEnv:
         logger = get_logger("test_env_enable_line")
         logger.info("hello")
         captured = capsys.readouterr()
-        assert "(:" in captured.err
+        assert re.search(r"\(\d+\)", captured.err)
 
     def test_logger_enable_file_from_env_false(self, monkeypatch, capsys):
         monkeypatch.setenv("LOGGER_ENABLE_FILE", "false")
@@ -284,7 +304,7 @@ class TestGetLoggerEnv:
         logger = get_logger("test_env_disable_line")
         logger.info("hello")
         captured = capsys.readouterr()
-        assert "(:" not in captured.err
+        assert not re.search(r"\(\d+\)", captured.err)
 
     def test_explicit_kwarg_overrides_env(self, monkeypatch):
         monkeypatch.setenv("LOGGER_NAME", "env_named")
