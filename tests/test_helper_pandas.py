@@ -287,19 +287,73 @@ class TestSeriesHeadAtt:
 class TestHeadOverride:
     """head() 메서드 오버라이드 테스트"""
 
+    @staticmethod
+    def _run_as(module_name, code, **ns):
+        """module_name 을 __name__ 으로 갖는 전역에서 code 를 실행하고 result 를 반환."""
+        g = {"__name__": module_name, **ns}
+        exec(compile(code, f"<{module_name}>", "exec"), g)
+        return g.get("result")
+
     def test_head_override_dataframe(self, sample_df, capsys):
-        """DataFrame.head() 오버라이드"""
+        """사용자 코드(__main__)의 DataFrame.head() 는 출력 + None 반환"""
         sample_df.set_head_att({"id": "아이디"})
-        sample_df.head()
+        result = self._run_as("__main__", "result = df.head()", df=sample_df)
         captured = capsys.readouterr()
         assert "아이디" in captured.out
+        assert result is None
 
     def test_head_override_series(self, sample_series, capsys):
-        """Series.head() 오버라이드"""
+        """사용자 코드(__main__)의 Series.head() 는 출력 + None 반환"""
         sample_series.set_head_att("value", "값")
-        sample_series.head()
+        result = self._run_as("__main__", "result = s.head()", s=sample_series)
         captured = capsys.readouterr()
         assert "값" in captured.out
+        assert result is None
+
+    def test_head_library_caller_returns_original_dataframe(self, sample_df, capsys):
+        """라이브러리(비 __main__) 호출은 원본 head 결과를 반환 (pyLDAvis 체인 재현)"""
+        sample_df.set_head_att({"id": "아이디"})
+        result = self._run_as(
+            "pyLDAvis._prepare", "result = df.head(2).drop(columns=['id'])", df=sample_df
+        )
+        assert isinstance(result, pd.DataFrame)
+        assert len(result) == 2
+        assert "id" not in result.columns
+        assert capsys.readouterr().out == ""
+
+    def test_head_library_caller_series_chain(self, sample_series, capsys):
+        """라이브러리의 Series.head(n).reset_index() 체인 보호"""
+        result = self._run_as(
+            "somelib.mod", "result = s.head(2).reset_index(drop=True)", s=sample_series
+        )
+        assert isinstance(result, pd.Series)
+        assert len(result) == 2
+        assert capsys.readouterr().out == ""
+
+    def test_head_keyword_n_uses_original(self, sample_df):
+        """head(n=3) 키워드 호출은 호출자와 무관하게 원본 동작 (TypeError 방지)"""
+        for mod in ("__main__", "somelib"):
+            result = self._run_as(mod, "result = df.head(n=3)", df=sample_df)
+            assert isinstance(result, pd.DataFrame)
+            assert len(result) == 3
+
+    def test_head_att_always_prints(self, sample_df, capsys):
+        """head_att() 는 호출자와 무관하게 항상 출력"""
+        sample_df.set_head_att({"id": "아이디"})
+        self._run_as("somelib", "df.head_att()", df=sample_df)
+        assert "아이디" in capsys.readouterr().out
+
+    def test_head_unknown_frame_falls_back(self, sample_df, monkeypatch):
+        """프레임 판별 실패 시 원본 head 로 폴백"""
+        import helper_dev_utils.helper_pandas_display as disp
+
+        def boom(depth):
+            raise ValueError("no frame")
+
+        monkeypatch.setattr(disp.sys, "_getframe", boom)
+        result = sample_df.head(2)
+        assert isinstance(result, pd.DataFrame)
+        assert len(result) == 2
 
 
 # =============================================================================

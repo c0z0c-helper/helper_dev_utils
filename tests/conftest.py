@@ -121,11 +121,11 @@ def load_test_env():
         temp_driver.mkdir(exist_ok=True)
 
         os.environ["MY_CACHE_LOCAL"] = str(temp_cache)
-        os.environ["MY_DRIVER_PATH"] = str(temp_driver)
+        os.environ["MY_DRIVER_LOCAL"] = str(temp_driver)
 
         print(f"\n[conftest] No .env.test found, using temp dirs:")
         print(f"  MY_CACHE_LOCAL={temp_cache}")
-        print(f"  MY_DRIVER_PATH={temp_driver}")
+        print(f"  MY_DRIVER_LOCAL={temp_driver}")
 
         yield
         return

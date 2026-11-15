@@ -11,7 +11,7 @@ Python 개발 시 자주 사용하는 유틸리티 모음 라이브러리
 - **helper_logger**: 로깅 유틸리티 (콘솔/파일 핸들러, 타임존 설정, 기본 KST)
 - **helper_pandas**: Pandas 확장 기능 (한글 컬럼 설명, 데이터 출력, HTML/콘솔 지원)
 - **helper_utils_print**: 출력 유틸리티 (디렉토리/JSON/딕셔너리 트리 구조 출력)
-- **helper_utils_colab**: 경로 관리 유틸리티 (로컬/Colab 환경 경로 자동 탐색)
+- **helper_utils_colab**: 경로 관리 호환성 레이어 (로컬/Colab 환경 경로 자동 탐색)
 - **helper_colab_auth**: Google Colab 인증 유틸리티 (사용자 인증, Secrets 조회, Drive 마운트 상태 확인)
 - **helper_google_driver**: Google Drive 경로 관리 유틸리티 (경로 조회/결합, 휴지통 비우기)
 - **helper_help**: 도움말 유틸리티 (함수/메서드 시그니처·docstring 출력, 모듈 함수 검색)
@@ -55,7 +55,7 @@ pip install helper-dev-utils[all]
 from helper_dev_utils import get_logger
 import logging
 
-# name을 생략하면 호출자 모듈명을 로거 이름으로 자동 사용
+# name을 생략하면 LOGGER_NAME 또는 anonymous/root 로거 사용
 logger = get_logger()
 logger.info("Hello World")
 logger.warning("경고 메시지")
@@ -70,7 +70,7 @@ logger.debug("디버그 메시지")
 logger = get_logger(enable_file_write=True, log_dir="logs")
 ```
 
-- `name`: 로거 이름. 생략(`None`)하면 `LOGGER_NAME` 환경 변수 → 호출자 모듈명 순으로 자동 결정. 이름 없는(anonymous) 로거가 필요하면 `name=""`을 명시적으로 전달.
+- `name`: 로거 이름. 생략(`None`)하면 `LOGGER_NAME` 환경 변수 → 이름 없는 anonymous/root 로거 순으로 결정. 호출자 모듈명을 자동으로 사용하지 않음.
 - `level`: 로그 레벨, int 또는 문자열 (기본: `INFO`)
 - `tz`: 타임스탬프에 적용할 타임존 (기본: `Asia/Seoul`)
 - `enable_file_write`: 파일 저장 활성화 여부 (기본: `False`)
@@ -81,7 +81,8 @@ logger = get_logger(enable_file_write=True, log_dir="logs")
   사이는 `::`(콜론 2개), 그 외 조합은 `:`(콜론 1개)로 구분한다. 활성화된 항목이 하나뿐이면
   구분자 없이 출력된다 (예: `(main.py::run:10)`, `(main.py:10)`, `(run)`, `(10)`).
 
-`level`을 제외한 각 인자를 생략하면 아래 환경 변수(`.env` 포함, `python-dotenv` 설치 시)를 우선 사용합니다.
+`level`을 제외한 각 인자를 생략하면 아래 환경 변수를 우선 사용합니다. `.env` 파일을 사용하려면
+호출자가 `python-dotenv`의 `load_dotenv()`를 먼저 호출해야 합니다.
 명시적으로 전달한 인자는 항상 환경 변수보다 우선합니다.
 
 | 환경 변수 | 대응 인자 |
@@ -161,7 +162,7 @@ df.clear_head_att()               # 전체 초기화
 from helper_dev_utils import print_dir_tree, print_json_tree, print_dic_tree
 
 # 디렉토리 트리 출력
-print_dir_tree('/path/to/directory', max_depth=3)
+print_dir_tree('/path/to/directory', max_file_list=10, max_dir_list=10)
 
 # JSON/딕셔너리 트리 출력 (파이프 스타일)
 data = {
@@ -171,10 +172,10 @@ data = {
     ],
     'config': {'debug': True}
 }
-print_json_tree(data, max_depth=5, max_list_items=10)
+print_json_tree(data, max_depth=5, list_count=10)
 
 # 딕셔너리 트리 출력 (박스 드로잉 스타일)
-print_dic_tree(data, max_depth=5, show_values=True)
+print_dic_tree(data, max_depth=5, print_value=True)
 ```
 
 ### 4. Colab/Path Utilities (helper_utils_colab)
@@ -182,25 +183,25 @@ print_dic_tree(data, max_depth=5, show_values=True)
 로컬 및 Google Colab 환경에서 경로를 자동으로 관리합니다.
 
 ```python
-from helper_dev_utils import my_driver, my_cache
+from helper_dev_utils import cache, cache_path, google_driver, google_driver_path
 
 # Google Drive 경로 가져오기 (Colab에서 자동 마운트)
-drive_path = my_driver()
+drive_path = google_driver()
 print(drive_path)  # /content/drive/MyDrive (Colab) 또는 로컬 경로
 
 # 캐시 디렉토리 가져오기 (OS별 자동 탐색)
-cache_path = my_cache()
-print(cache_path)  # ~/.cache (Linux/Mac) 또는 로컬 경로
+cache_root = cache()
+print(cache_root)  # ~/.cache (Linux/Mac) 또는 로컬 경로
 
 # 하위 경로 지정
-model_cache = my_cache('models/bert')
-data_drive = my_driver('datasets/images')
+model_cache = cache_path('models/bert')
+data_drive = google_driver_path('datasets/images')
 ```
 
 **환경변수 우선 지원**:
 ```env
-MY_DRIVER_PATH=/custom/drive/path
-MY_CACHE_PATH=/custom/cache/path
+MY_DRIVER_LOCAL=/custom/drive/path
+MY_CACHE_LOCAL=/custom/cache/path
 ```
 
 ### 5. Help Utilities (helper_help)
@@ -403,11 +404,11 @@ pytest tests --cov=helper_dev_utils --cov-report=html
 ```env
 # Windows
 MY_CACHE_LOCAL=C:/Users/YOUR_USERNAME/AppData/Local/Temp/helper_dev_utils_test_cache
-MY_DRIVER_PATH=C:/Users/YOUR_USERNAME/AppData/Local/Temp/helper_dev_utils_test_driver
+MY_DRIVER_LOCAL=C:/Users/YOUR_USERNAME/AppData/Local/Temp/helper_dev_utils_test_driver
 
 # Linux/macOS
 # MY_CACHE_LOCAL=/tmp/helper_dev_utils_test_cache
-# MY_DRIVER_PATH=/tmp/helper_dev_utils_test_driver
+# MY_DRIVER_LOCAL=/tmp/helper_dev_utils_test_driver
 ```
 
 `conftest.py`가 자동으로 `.env.test`를 로드하여 테스트 실행 전 환경을 설정합니다.

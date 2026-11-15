@@ -3,6 +3,3 @@ numpy>=1.16.0
 pandas>=1.0.0
 python-dotenv>=0.19.0
 backports.zoneinfo>=0.2.1; python_version < '3.9'
-
-# 선택적: helper_google_driver.empty_drive_trash()에서만 필요 (Colab 전용)
-google-api-python-client>=2.0.0

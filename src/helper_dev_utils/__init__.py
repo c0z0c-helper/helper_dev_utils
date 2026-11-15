@@ -13,7 +13,7 @@ Python 유틸리티 모음 라이브러리
 기본 사용법:
     # Logger
     from helper_dev_utils import get_logger
-    logger = get_logger()  # 호출자 모듈명을 로거 이름으로 자동 사용
+    logger = get_logger()  # LOGGER_NAME 또는 anonymous/root 로거 사용
     logger.info("Hello World")
 
     # Pandas Extension
@@ -30,9 +30,9 @@ Python 유틸리티 모음 라이브러리
     print_json_tree({'key': 'value'})
 
     # Colab Path
-    from helper_dev_utils import my_driver, my_cache
-    driver_path = my_driver()  # Google Drive 경로
-    cache_path = my_cache()    # 캐시 경로
+    from helper_dev_utils import google_driver, cache
+    driver_path = google_driver()  # Google Drive 경로
+    cache_path = cache()            # 캐시 경로
 """
 
 __version__ = "0.7.0"

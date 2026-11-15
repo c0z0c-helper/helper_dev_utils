@@ -7,6 +7,7 @@ pandas DataFrame/Series의 출력 기능을 제공합니다.
 - 한글 컬럼 설명 지원
 """
 
+import sys
 from typing import Any, Dict, Optional, Union
 
 import pandas as pd
@@ -284,6 +285,37 @@ def _string_head_att(self, df_display: pd.DataFrame, labels: Dict[str, str]) -> 
 # =============================================================================
 # SERIES DISPLAY FUNCTIONS
 # =============================================================================
+
+
+def _caller_is_user_code(depth: int = 2) -> bool:
+    """head() 를 호출한 쪽이 사용자 코드(노트북 셀/직접 실행 스크립트)인지 판별합니다.
+
+    호출 모듈의 __name__ 이 '__main__' 일 때만 True 입니다.
+    판별 불가하거나 그 외 모든 경우는 False (= 원본 pandas 동작 사용) 입니다.
+    """
+    try:
+        return sys._getframe(depth).f_globals.get("__name__") == "__main__"
+    except Exception:
+        return False
+
+
+def pd_head_override(self, *args: Any, **kwargs: Any) -> Any:
+    """DataFrame.head 대체 진입점.
+
+    사용자 코드(__main__)에서 호출되면 head_att 출력(None 반환)을,
+    라이브러리 등 그 외 호출자에게는 원본 head 결과(DataFrame)를 반환합니다.
+    예: pyLDAvis 내부의 ``df.head(n).drop(...)`` 체인 보호.
+    """
+    if _caller_is_user_code() and "n" not in kwargs:
+        return pd_head_att(self, *args, **kwargs)
+    return pd.DataFrame._head(self, *args, **kwargs)
+
+
+def series_head_override(self, *args: Any, **kwargs: Any) -> Any:
+    """Series.head 대체 진입점 (pd_head_override 와 동일 규칙)."""
+    if _caller_is_user_code() and "n" not in kwargs:
+        return series_head_att(self, *args, **kwargs)
+    return pd.Series._head(self, *args, **kwargs)
 
 
 def series_head_att(self, rows: Union[int, str] = 5, out: Optional[str] = None) -> Any:

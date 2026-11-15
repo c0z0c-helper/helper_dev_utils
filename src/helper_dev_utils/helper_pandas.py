@@ -111,8 +111,9 @@ def set_pandas_extension(enable_head_override: bool = True) -> None:
 
     # head() 메서드 오버라이드
     if enable_head_override:
-        setattr(pd.DataFrame, "head", display.pd_head_att)
-        setattr(pd.Series, "head", display.series_head_att)
+        # __main__ 호출만 출력, 라이브러리 등 그 외 호출자는 원본 head 동작
+        setattr(pd.DataFrame, "head", display.pd_head_override)
+        setattr(pd.Series, "head", display.series_head_override)
     else:
         # 원본 복원
         setattr(pd.DataFrame, "head", pd.DataFrame._head)
@@ -212,10 +213,10 @@ def main() -> None:
     _print("-" * 80)
 
     _print("[기본 출력 - 5행]")
-    df.head()
+    df.head_att()
 
     _print("[문자열 형태로 반환]")
-    result_str = df.head(rows=2, out="str")
+    result_str = df.head_att(rows=2, out="str")
     _print(f"반환된 문자열:\n{result_str}")
 
     # =============================================================================
@@ -236,7 +237,7 @@ def main() -> None:
     _print("✓ Series 컬럼 설명 설정: 'value' → '값'")
 
     _print("[Series head 출력]")
-    series.head(rows=3)
+    series.head_att(rows=3)
 
     # =============================================================================
     # 테스트 6: remove_head_att - 컬럼 설명 삭제
@@ -258,7 +259,7 @@ def main() -> None:
     _print(df.get_head_att())
 
     _print("[남은 컬럼 설명으로 출력]")
-    df.head(rows=3)
+    df.head_att(rows=3)
 
     # =============================================================================
     # 테스트 7: clear_head_att - 모든 컬럼 설명 초기화
@@ -274,7 +275,7 @@ def main() -> None:
     _print(df.get_head_att())
 
     _print("[컬럼 설명 없이 출력 (원본 컬럼명만 표시)]")
-    df.head(rows=3)
+    df.head_att(rows=3)
 
     # =============================================================================
     # 테스트 8: 일부 컬럼만 설명이 있는 경우
@@ -289,7 +290,7 @@ def main() -> None:
     _print(f"현재 컬럼 설명: {df.get_head_att()}")
 
     _print("[일부 컬럼만 한글 설명이 있는 출력]")
-    df.head(rows=3)
+    df.head_att(rows=3)
 
     # =============================================================================
     # 테스트 9: HTML 출력 테스트
@@ -300,7 +301,7 @@ def main() -> None:
 
     df.set_head_att({"score": "시험점수", "city": "도시"})
 
-    html_output = df.head(rows=3, out="html")
+    html_output = df.head_att(rows=3, out="html")
     _print("✓ HTML 출력 생성 완료")
     _print(f"HTML 타입: {type(html_output)}")
     if hasattr(html_output, "data"):
@@ -326,7 +327,7 @@ def main() -> None:
     df_float.set_head_att({"value1": "값1", "value2": "값2", "value3": "정수값"})
 
     _print("[실수 포맷팅 테스트 (소수점 4자리, 끝자리 0 제거)]")
-    df_float.head()
+    df_float.head_att()
 
     # =============================================================================
     # 테스트 11: enable_head_override 기능 테스트
@@ -346,8 +347,8 @@ def main() -> None:
     df_test.set_head_att({"product": "제품", "price": "가격", "stock": "재고"})
 
     _print("[오버라이드 모드: enable_head_override=True]")
-    _print("df.head() 호출 (head_att 기능 사용):")
-    df_test.head(rows=3)
+    _print("df.head_att() 호출 (__main__ 의 df.head() 도 동일하게 출력):")
+    df_test.head_att(rows=3)
 
     # =============================================================================
     # 테스트 완료
