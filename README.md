@@ -435,6 +435,15 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
 ## 버전 히스토리
 
+### 0.7.1
+- `helper_pandas`: `DataFrame.head()`/`Series.head()` 오버라이드가 라이브러리 내부 호출을 깨뜨리던 문제 수정
+  (예: pyLDAvis `prepare()` 의 `head(n).drop(...)` 체인에서 `None` 반환으로 `AttributeError` 발생).
+  - 사용자 코드(노트북 셀, 직접 실행 스크립트 = `__main__`)에서 호출한 경우에만 기존처럼 보조 컬럼명을 출력하고 `None` 반환
+  - 그 외 모든 호출자(외부 라이브러리 등)나 호출자 판별 실패 시에는 원본 pandas `head()` 결과를 반환
+  - `head(n=3)` 처럼 `n` 키워드로 호출하면 호출자와 무관하게 원본 동작 (`TypeError` 방지)
+  - `head_att()` 는 호출자와 무관하게 항상 출력
+  - 다른 모듈에서 보조 컬럼명 출력이 필요하면 `head_att()` 를 사용
+
 ### 0.7.0
 - `helper_logger`: `get_logger`에 `enable_fnc` 옵션 추가 — 로그를 호출한 함수명을 출력할 수 있다.
   `enable_file`/`enable_fnc`/`enable_line` 중 활성화된 항목만 `(파일명::함수명:라인번호)` 형태로
